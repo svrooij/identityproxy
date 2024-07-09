@@ -1,6 +1,14 @@
+using IdentityProxy.Api.Identity;
+using IdentityProxy.Api.Identity.Models;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateSlimBuilder(args);
+
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<CertificateStore>();
+var authority = Environment.GetEnvironmentVariable("IDENTITY_AUTHORITY") ?? throw new Exception("IDENTITY_AUTHORITY is not set");
+builder.Services.AddSingleton(new IdentityServiceSettings { Authority = authority });
+builder.Services.AddHttpClient<IdentityService>();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -9,26 +17,14 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 var app = builder.Build();
 
-var sampleTodos = new Todo[] {
-    new(1, "Walk the dog"),
-    new(2, "Do the dishes", DateOnly.FromDateTime(DateTime.Now)),
-    new(3, "Do the laundry", DateOnly.FromDateTime(DateTime.Now.AddDays(1))),
-    new(4, "Clean the bathroom"),
-    new(5, "Clean the car", DateOnly.FromDateTime(DateTime.Now.AddDays(2)))
-};
-
-var todosApi = app.MapGroup("/todos");
-todosApi.MapGet("/", () => sampleTodos);
-todosApi.MapGet("/{id}", (int id) =>
-    sampleTodos.FirstOrDefault(a => a.Id == id) is { } todo
-        ? Results.Ok(todo)
-        : Results.NotFound());
+app.MapIdentityEndpoints();
 
 app.Run();
 
-public record Todo(int Id, string? Title, DateOnly? DueBy = null, bool IsComplete = false);
-
-[JsonSerializable(typeof(Todo[]))]
+[JsonSerializable(typeof(OpenIdConfiguration))]
+[JsonSerializable(typeof(Jwks))]
+[JsonSerializable(typeof(TokenRequest))]
+[JsonSerializable(typeof(TokenResponse))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 

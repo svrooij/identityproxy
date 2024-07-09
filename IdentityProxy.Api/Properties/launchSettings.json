@@ -5,7 +5,8 @@
       "launchBrowser": true,
       "launchUrl": "todos",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "IDENTITY_AUTHORITY": "https://login.microsoftonline.com/svrooij.io/v2.0/"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5256"
@@ -13,9 +14,10 @@
     "Container (Dockerfile)": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/todos",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/openid-configuration",
       "environmentVariables": {
-        "ASPNETCORE_HTTP_PORTS": "8080"
+        "ASPNETCORE_HTTP_PORTS": "8080",
+        "IDENTITY_AUTHORITY": "https://login.microsoftonline.com/svrooij.io/v2.0/"
       },
       "publishAllPorts": true
     }
