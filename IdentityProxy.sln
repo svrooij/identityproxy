@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityProxy.Api", "Identi
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{85601F44-E552-44EE-B1B0-9EE3D490622A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityProxy.Test", "IdentityProxy.Test\IdentityProxy.Test.csproj", "{69C62C4B-6E3E-4759-B81C-B87352CE4679}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityProxy.Test", "IdentityProxy.Test\IdentityProxy.Test.csproj", "{69C62C4B-6E3E-4759-B81C-B87352CE4679}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testcontainers.IdentityProxy", "Testcontainers.IdentityProxy\Testcontainers.IdentityProxy.csproj", "{A3DEDB5A-857B-4967-93A5-CCC675C29193}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +25,10 @@ Global
 		{69C62C4B-6E3E-4759-B81C-B87352CE4679}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69C62C4B-6E3E-4759-B81C-B87352CE4679}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{69C62C4B-6E3E-4759-B81C-B87352CE4679}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3DEDB5A-857B-4967-93A5-CCC675C29193}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3DEDB5A-857B-4967-93A5-CCC675C29193}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3DEDB5A-857B-4967-93A5-CCC675C29193}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3DEDB5A-857B-4967-93A5-CCC675C29193}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
