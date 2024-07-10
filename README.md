@@ -89,18 +89,24 @@ API authentication these days is mostly done with Json Web Tokens, since they ar
 
 During normal operation the client requests a token from the IdP, then uses that token to make requests to the API. The API validates the token using the IdP's public keys.
 
+![JWT authentication flow](docs/assets/jwt-authentication.svg)
+
 ```mermaid
   sequenceDiagram
     participant Client
     participant API
     participant IdP
     Client->>IdP: Give me a token
+    activate IdP
     IdP->>Client: Here is a token
+    deactivate IdP
     Client->>API: Request with token
     API-->>IdP: Give me the openid config (once)
+    activate IdP
     IdP-->>API: OpenID Configuration
     API-->>IdP: Give me the signing keys (once)
     IdP-->>API: JWKS result
+    deactivate IdP
     API->>API: Validate token using signing keys
     API->>Client: Response
 ```
@@ -109,27 +115,33 @@ During normal operation the client requests a token from the IdP, then uses that
 
 During integration testing you will need to test multiple user roles and scenarios. This can be difficult or cumbersome with a real IdP, where you would have to manage all the different credentials. IdentityProxy allows you to mock the `.well-known/openid-configuration` endpoint, to change the `jwks_uri` to point to the proxy. The proxy will then return the real public keys from the IdP, and inject an additional certificate to be able to generate any tokens you need for testing.
 
+![JWT authentication with proxy](docs/assets/jwt-authentication-with-proxy.svg)
+
 ```mermaid
-  sequenceDiagram
+sequenceDiagram
     participant Client
     participant API
     participant Proxy
     participant IdP
     Client->>Proxy: Give me a token
+    activate Proxy
     Proxy-->>IdP: Give me the OpenID config (once)
     IdP-->>Proxy: OpenID Configuration
     Proxy-->>Proxy: Generate signing certificate
     Proxy->>Proxy: Sign token with cert
     Proxy->>Client: Here is a token
+    deactivate Proxy
     Client->>API: Request with token
     API-->>Proxy: Give me the openid config (once)
+    activate Proxy
     Proxy-->>IdP: Give me the OpenID config (once)
     IdP-->>Proxy: OpenID Configuration
     Proxy-->>API: OpenID Configuration (with JWKS_uri modified)
     API-->>Proxy: Give me the signing keys (once)
     Proxy-->>IdP: Give me the real signing keys (once)
     IdP-->>Proxy: Real JWKS result
-    Proxy-->>API: JWKS result with extra cert
+    Proxy-->>API: JWKS result (+ 1 extra cert)
+    deactivate Proxy
     API->>API: Validate token using signing keys
     API->>Client: Response
 ```
