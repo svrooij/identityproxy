@@ -95,16 +95,12 @@ During normal operation the client requests a token from the IdP, then uses that
     participant API
     participant IdP
     Client->>IdP: Give me a token
-    activate IdP
     IdP->>Client: Here is a token
-    deactivate IdP
     Client->>API: Request with token
     API-->>IdP: Give me the openid config (once)
-    activate IdP
     IdP-->>API: OpenID Configuration
     API-->>IdP: Give me the signing keys (once)
     IdP-->>API: JWKS result
-    deactivate IdP
     API->>API: Validate token using signing keys
     API->>Client: Response
 ```
@@ -120,24 +116,20 @@ During integration testing you will need to test multiple user roles and scenari
     participant Proxy
     participant IdP
     Client->>Proxy: Give me a token
-    activate Proxy
     Proxy-->>IdP: Give me the OpenID config (once)
     IdP-->>Proxy: OpenID Configuration
     Proxy-->>Proxy: Generate signing certificate
     Proxy->>Proxy: Sign token with cert
     Proxy->>Client: Here is a token
-    deactivate Proxy
     Client->>API: Request with token
     API-->>Proxy: Give me the openid config (once)
-    activate Proxy
     Proxy-->>IdP: Give me the OpenID config (once)
     IdP-->>Proxy: OpenID Configuration
     Proxy-->>API: OpenID Configuration (with JWKS_uri modified)
     API-->>Proxy: Give me the signing keys (once)
     Proxy-->>IdP: Give me the real signing keys (once)
     IdP-->>Proxy: Real JWKS result
-    Proxy-->>API: JWKS result (+ 1 extra cert)
-    deactivate Proxy
+    Proxy-->>API: JWKS result with extra cert
     API->>API: Validate token using signing keys
     API->>Client: Response
 ```
