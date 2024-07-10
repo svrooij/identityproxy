@@ -11,7 +11,7 @@ public class IdentityService
     private readonly HttpClient _httpClient;
     private readonly ILogger<IdentityService> _logger;
     private readonly IdentityServiceSettings _settings;
-    
+
     public IdentityService(IMemoryCache cache, CertificateStore certificateStore, HttpClient httpClient, ILogger<IdentityService> logger, IdentityServiceSettings settings)
     {
         _cache = cache;
@@ -34,16 +34,16 @@ public class IdentityService
             var response = await _httpClient.GetAsync(_settings.GetConfigUri());
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadFromJsonAsync(AppJsonSerializerContext.Default.OpenIdConfiguration, cancellationToken);
+            return await response.Content.ReadFromJsonAsync(IdentityJsonSerializerContext.Default.OpenIdConfiguration, cancellationToken);
         });
 
-        return result?.Clone() as OpenIdConfiguration;
+        return result;
     }
 
     public async Task<Jwks?> GetExternalJwksAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Getting JWKS");
-        
+
         // Check if we loaded the jwks already
         return await _cache.GetOrCreateAsync("Jwks", async entry =>
         {
@@ -55,7 +55,7 @@ public class IdentityService
             var response = await _httpClient.GetAsync(config.JwksUri);
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadFromJsonAsync(AppJsonSerializerContext.Default.Jwks, cancellationToken);
+            return await response.Content.ReadFromJsonAsync(IdentityJsonSerializerContext.Default.Jwks, cancellationToken);
         });
     }
 
@@ -68,6 +68,7 @@ public class IdentityService
 
         using var rsa = certificate.PublicKey.GetRSAPublicKey();
         var rsaKey = JsonWebKeyConverter.ConvertFromRSASecurityKey(new RsaSecurityKey(rsa));
+        // Apparently the KeyId of an RSA key does not get set by default, bug? This is how the `InternalKeyId` is calculated.
         var kid = Base64UrlEncoder.Encode(rsaKey.ComputeJwkThumbprint());
         _logger.LogInformation("Injecting certificate with kid {Kid}", kid);
         var jwk = new Jwk
@@ -135,5 +136,4 @@ public class IdentityService
             ExpiresIn = request.Lifetime,
         };
     }
-    
 }

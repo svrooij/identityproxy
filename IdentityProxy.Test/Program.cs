@@ -27,7 +27,7 @@ Console.ReadLine();
 await futureContainer!.DisposeAsync();
 */
 
-// This is how you would use the Testcontainers.IdenityProxy library
+// This is how you would use the Testcontainers.IdentityProxy library
 
 using Testcontainers.IdentityProxy;
 

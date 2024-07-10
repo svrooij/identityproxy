@@ -1,11 +1,6 @@
 ﻿using Docker.DotNet.Models;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Testcontainers.IdentityProxy;
 /// <summary>
@@ -15,7 +10,7 @@ public sealed class IdentityProxyConfiguration : ContainerConfiguration
 {
     public IdentityProxyConfiguration(string? authority = null, int port = 0)
     {
-        Authroity = authority;
+        Authority = authority;
         Port = port;
     }
 
@@ -35,7 +30,7 @@ public sealed class IdentityProxyConfiguration : ContainerConfiguration
 
     public IdentityProxyConfiguration(IdentityProxyConfiguration oldValue, IdentityProxyConfiguration newValue) : base(oldValue, newValue)
     {
-        Authroity = BuildConfiguration.Combine(oldValue.Authroity, newValue.Authroity);
+        Authority = BuildConfiguration.Combine(oldValue.Authority, newValue.Authority);
         Port = BuildConfiguration.Combine(oldValue.Port, newValue.Port);
     }
 
@@ -43,7 +38,7 @@ public sealed class IdentityProxyConfiguration : ContainerConfiguration
     /// Authority url (eg. 'https://login.microsoftonline.com/{tenant-id}/v2.0/')
     /// </summary>
     /// <remarks>Will be append with `/.well-known/openid-configuration`</remarks>
-    public string? Authroity { get; set; }
+    public string? Authority { get; set; }
 
     /// <summary>
     /// The port the auth proxy will listen on
