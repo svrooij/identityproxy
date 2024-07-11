@@ -24,7 +24,7 @@ internal partial class IdentityService
     public async Task<OpenIdConfiguration?> GetExternalOpenIdConfigurationAsync(CancellationToken cancellationToken)
     {
         LogGettingOpenIdConfiguration(_settings.Authority);
-        
+
         // GetOrCreate will cache when needed or return the cached value
         var result = await _cache.GetOrCreateAsync("OpenIdConfiguration", async entry =>
         {
@@ -71,7 +71,7 @@ internal partial class IdentityService
         var rsaKey = JsonWebKeyConverter.ConvertFromRSASecurityKey(new RsaSecurityKey(rsa));
         // Apparently the KeyId of an RSA key does not get set by default, bug? This is how the `InternalKeyId` is calculated.
         var kid = Base64UrlEncoder.Encode(rsaKey.ComputeJwkThumbprint());
-       LogInjectingCertificate(kid);
+        LogInjectingCertificate(kid);
 
         var jwk = new Jwk
         {
@@ -157,7 +157,7 @@ internal partial class IdentityService
 
     [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Got external JWKS with {KeyCount} keys")]
     private partial void LogGotExternalJwks(int keyCount);
-    
+
     [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "Injecting certificate with kid {Kid}")]
     private partial void LogInjectingCertificate(string kid);
 
