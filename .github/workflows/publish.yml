@@ -73,6 +73,6 @@ jobs:
       run: dotnet pack ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj --configuration Release --no-build -p:Version=$("${{ github.ref_name }}".Substring(1))
 
     - name: ✈️ Publish SvRooij.Testcontainers.IdentityProxy to nuget.org
-      run: dotnet nuget push ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ./SvRooij.Testcontainers.IdentityProxy/**/SvRooij.Testcontainers.IdentityProxy.*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
       env:
         NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
