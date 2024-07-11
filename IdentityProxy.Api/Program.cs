@@ -1,31 +1,26 @@
+using IdentityProxy.Api;
 using IdentityProxy.Api.Identity;
 using IdentityProxy.Api.Identity.Models;
-using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
+// Register some services
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CertificateStore>();
-var authority = Environment.GetEnvironmentVariable("IDENTITY_AUTHORITY") ?? throw new Exception("IDENTITY_AUTHORITY is not set");
+
+var authority = builder.Configuration.GetValue<string>("IDENTITY_AUTHORITY") ?? throw new AppConfigurationException("IDENTITY_AUTHORITY is not set");
 builder.Services.AddSingleton(new IdentityServiceSettings { Authority = authority });
+// This will add the IdentityService to the DI container and configure the HttpClient
 builder.Services.AddHttpClient<IdentityService>();
 
+// Json serialization in AOT project
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
-    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, IdentityJsonSerializerContext.Default);
 });
 
 var app = builder.Build();
-
-app.MapIdentityEndpoints();
-
-app.Run();
-
-[JsonSerializable(typeof(OpenIdConfiguration))]
-[JsonSerializable(typeof(Jwks))]
-[JsonSerializable(typeof(TokenRequest))]
-[JsonSerializable(typeof(TokenResponse))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext
-{
-
-}
+// Add the identity endpoints
+app.MapIdentityEndpoints(externalUrl: app.Configuration.GetValue<string>("EXTERNAL_URL"));
+app.Logger.LogInformation("IdentityProxy will proxy authority: {Authority}", authority);
+await app.RunAsync();

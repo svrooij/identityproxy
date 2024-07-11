@@ -3,7 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace IdentityProxy.Api.Identity;
 
-public class CertificateStore
+internal class CertificateStore
 {
     private const int VALID_FROM_MINUTES_ADJUSTMENT = -5;
     private const int VALID_UNTIL_DAYS_ADJUSTMENT = 10;

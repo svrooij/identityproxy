@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Testcontainers" Version="3.9.0" />
+    <ProjectReference Include="..\SvRooij.Testcontainers.IdentityProxy\SvRooij.Testcontainers.IdentityProxy.csproj" />
   </ItemGroup>
 
 </Project>
