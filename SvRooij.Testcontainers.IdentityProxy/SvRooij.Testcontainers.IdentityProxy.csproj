@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	<DefaultNamespace>Testcontainers.IdentityProxy</DefaultNamespace>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>$(MSBuildProjectName.Replace(" ", "_").Replace("SvRooij.","")</RootNamespace>
+    <Title>IdenityProxy Testcontainer</Title>
+    <Authors>svrooij</Authors>
+    <Description>Run a token proxy, to integration test your api protected with JWT tokens.</Description>
+    <PackageProjectUrl>https://github.com/svrooij/identityproxy</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/svrooij/identityproxy.git</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <IncludeSymbols>False</IncludeSymbols>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Testcontainers" Version="3.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<None Include="..\LICENSE.txt" Pack="true" PackagePath="\LICENSE.txt" />
+	<None Include="..\README.md" Pack="true" PackagePath="\README.md" />
+  </ItemGroup>
+
+</Project>

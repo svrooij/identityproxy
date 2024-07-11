@@ -15,7 +15,6 @@ using Testcontainers.IdentityProxy;
 
 var identityProxy = new IdentityProxyBuilder()
     .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/")
-    .WithRandomPort()
     .Build();
 
 await identityProxy.StartAsync();

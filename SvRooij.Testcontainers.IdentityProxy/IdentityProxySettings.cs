@@ -8,10 +8,9 @@ namespace Testcontainers.IdentityProxy;
 /// </summary>
 public sealed class IdentityProxyConfiguration : ContainerConfiguration
 {
-    public IdentityProxyConfiguration(string? authority = null, int port = 0)
+    public IdentityProxyConfiguration(string? authority = null)
     {
         Authority = authority;
-        Port = port;
     }
 
     public IdentityProxyConfiguration(IResourceConfiguration<CreateContainerParameters> resourceConfiguration) : base(resourceConfiguration)
@@ -31,7 +30,6 @@ public sealed class IdentityProxyConfiguration : ContainerConfiguration
     public IdentityProxyConfiguration(IdentityProxyConfiguration oldValue, IdentityProxyConfiguration newValue) : base(oldValue, newValue)
     {
         Authority = BuildConfiguration.Combine(oldValue.Authority, newValue.Authority);
-        Port = BuildConfiguration.Combine(oldValue.Port, newValue.Port);
     }
 
     /// <summary>
@@ -39,10 +37,4 @@ public sealed class IdentityProxyConfiguration : ContainerConfiguration
     /// </summary>
     /// <remarks>Will be append with `/.well-known/openid-configuration`</remarks>
     public string? Authority { get; set; }
-
-    /// <summary>
-    /// The port the auth proxy will listen on
-    /// </summary>
-    /// <remarks>Also used to tell the proxy what the host of the jwks_uri should be.</remarks>
-    public int Port { get; set; }
 }

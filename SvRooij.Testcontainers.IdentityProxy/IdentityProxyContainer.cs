@@ -10,17 +10,11 @@ namespace Testcontainers.IdentityProxy;
 /// </remarks>
 public class IdentityProxyContainer : DockerContainer
 {
-    private readonly IdentityProxyConfiguration _configuration;
     private readonly HttpClient _httpClient;
     public IdentityProxyContainer(IdentityProxyConfiguration configuration) : base(configuration)
     {
-        _configuration = configuration;
-
         // Create a http client to communicate with the auth proxy and get mocked tokens
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri($"http://localhost:{_configuration.Port}/")
-        };
+        _httpClient = new HttpClient();
     }
 
     /// <summary>
@@ -29,7 +23,7 @@ public class IdentityProxyContainer : DockerContainer
     /// <remarks>The default jwt middleware, require metadata over https unless you set 'RequireHttpsMetadata' to <see langword="false"/></remarks>
     public string GetAuthority()
     {
-        return $"http://localhost:{_configuration.Port}/";
+        return $"http://{this.Hostname}:{this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT)}/";
     }
 
     /// <summary>
@@ -37,10 +31,11 @@ public class IdentityProxyContainer : DockerContainer
     /// </summary>
     /// <param name="tokenRequest">TokenRequest</param>
     /// <returns></returns>
-    public async Task<TokenResult?> GetTokenAsync(TokenRequest tokenRequest)
+    public async Task<TokenResult?> GetTokenAsync(TokenRequest tokenRequest, CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PostAsJsonAsync("/api/identity/token", tokenRequest);
+        _httpClient.BaseAddress ??= new Uri($"http://{this.Hostname}:{this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT)}/");
+        var response = await _httpClient.PostAsJsonAsync("/api/identity/token", tokenRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<TokenResult>();
+        return await response.Content.ReadFromJsonAsync<TokenResult>(cancellationToken);
     }
 }

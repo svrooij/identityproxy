@@ -2,6 +2,7 @@
 using DotNet.Testcontainers;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
+using System.Text;
 
 namespace Testcontainers.IdentityProxy;
 
@@ -13,7 +14,9 @@ namespace Testcontainers.IdentityProxy;
 /// </remarks>
 public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, IdentityProxyContainer, IdentityProxyConfiguration>
 {
-    private const string IDENTITY_PROXY_IMAGE = "ghcr.io/svrooij/identityproxy:v0.1.0";
+    private const string IDENTITY_PROXY_IMAGE = "ghcr.io/svrooij/identityproxy:latest";
+
+    public const ushort API_PORT = 8080;
 
     /// <summary>
     /// Create a new instance of the <see cref="IdentityProxyBuilder"/>
@@ -36,28 +39,12 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
     /// <param name="authority">Authority url (eg. 'https://login.microsoftonline.com/{tenant-id}/v2.0/')</param>
     public IdentityProxyBuilder WithAuthority(string authority)
     {
+        if (Uri.TryCreate(authority, UriKind.Absolute, out var uri) && !uri.Scheme.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("The authority must be a valid url", nameof(authority));
+        }
         return Merge(DockerResourceConfiguration, new IdentityProxyConfiguration(authority: authority))
             .WithEnvironment("IDENTITY_AUTHORITY", authority);
-    }
-
-    /// <summary>
-    /// Map this app to a specific port at the host
-    /// </summary>
-    /// <param name="port"></param>
-    public IdentityProxyBuilder WithPort(int port)
-    {
-        return Merge(DockerResourceConfiguration, new IdentityProxyConfiguration(port: port))
-            .WithPortBinding(port, 8080)
-            .WithEnvironment("EXTERNAL_URL", $"http://localhost:{port}");
-    }
-
-    /// <summary>
-    /// Map this app to a random port at the host
-    /// </summary>
-    public IdentityProxyBuilder WithRandomPort()
-    {
-        var port = new Random().Next(10000, 60000);
-        return WithPort(port);
     }
 
     public override IdentityProxyContainer Build()
@@ -80,12 +67,19 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
     {
         return base.Init()
             .WithImage(IDENTITY_PROXY_IMAGE)
+            .WithPortBinding(API_PORT, true)
             .WithWaitStrategy(Wait.ForUnixContainer()
                 .UntilHttpRequestIsSucceeded(req => req
                     .ForPath("/.well-known/openid-configuration")
-                    .ForPort(8080)
+                    .ForPort(API_PORT)
                     .WithMethod(HttpMethod.Get)
-                ));
+                ))
+            .WithStartupCallback(async (container, cancellationToken) =>
+            {
+                var externalUrl = $"http://{container.Hostname}:{container.GetMappedPublicPort(API_PORT)}";
+                var configData = Encoding.UTF8.GetBytes(GenerateSettings(externalUrl));
+                await container.CopyAsync(configData, "/app/appsettings.Production.json", ct: cancellationToken);
+            });
     }
 
     protected override IdentityProxyBuilder Merge(IdentityProxyConfiguration oldValue, IdentityProxyConfiguration newValue)
@@ -97,6 +91,15 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
     {
         base.Validate();
         _ = Guard.Argument(DockerResourceConfiguration.Authority, nameof(DockerResourceConfiguration.Authority)).NotNull().NotEmpty();
-        _ = Guard.Argument(DockerResourceConfiguration.Port, nameof(DockerResourceConfiguration.Port)).HasValue();
+    }
+
+    /// <summary>
+    /// Generate the appsettings.json file, with the correct external url
+    /// </summary>
+    /// <param name="externalUrl">The URL where the API is reachable from the host</param>
+    /// <returns></returns>
+    private static string GenerateSettings(string externalUrl)
+    {
+        return @$"{{ ""EXTERNAL_URL"": ""{externalUrl}""}}";
     }
 }

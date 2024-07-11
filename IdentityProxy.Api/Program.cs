@@ -1,3 +1,4 @@
+using IdentityProxy.Api;
 using IdentityProxy.Api.Identity;
 using IdentityProxy.Api.Identity.Models;
 
@@ -6,7 +7,8 @@ var builder = WebApplication.CreateSlimBuilder(args);
 // Register some services
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CertificateStore>();
-var authority = Environment.GetEnvironmentVariable("IDENTITY_AUTHORITY") ?? throw new Exception("IDENTITY_AUTHORITY is not set");
+
+var authority = builder.Configuration.GetValue<string>("IDENTITY_AUTHORITY") ?? throw new AppConfigurationException("IDENTITY_AUTHORITY is not set");
 builder.Services.AddSingleton(new IdentityServiceSettings { Authority = authority });
 // This will add the IdentityService to the DI container and configure the HttpClient
 builder.Services.AddHttpClient<IdentityService>();
@@ -19,5 +21,6 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 var app = builder.Build();
 // Add the identity endpoints
-app.MapIdentityEndpoints();
-app.Run();
+app.MapIdentityEndpoints(externalUrl: app.Configuration.GetValue<string>("EXTERNAL_URL"));
+app.Logger.LogInformation("IdentityProxy will proxy authority: {Authority}", authority);
+await app.RunAsync();

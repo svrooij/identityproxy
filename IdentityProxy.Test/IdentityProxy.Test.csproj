@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Testcontainers.IdentityProxy\Testcontainers.IdentityProxy.csproj" />
+    <ProjectReference Include="..\SvRooij.Testcontainers.IdentityProxy\SvRooij.Testcontainers.IdentityProxy.csproj" />
   </ItemGroup>
 
 </Project>

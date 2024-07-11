@@ -1,0 +1,78 @@
+name: Release Docker Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-docker:
+    name: 📦 Push IdentityProxy to GitHub Container Registry
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: 🧑‍💻 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🏗️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.4.0
+      
+      - name: 🔑 Login to GitHub Container Registry
+        uses: docker/login-action@v3.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 📃 Extract tag name
+        id: tag_name
+        run: echo "::set-output name=TAG_NAME::${GITHUB_REF#refs/tags/}"
+      
+      - name: 👷 Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./IdentityProxy.Api/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository}}:${{ steps.tag_name.outputs.TAG_NAME }},ghcr.io/${{ github.repository}}:latest
+
+  build-nuget:
+    name: 📦 Push IdentityProxy to nuget.org
+    runs-on: ubuntu-latest
+    needs: build-docker
+    steps:
+    - name: 👨‍💻 Check-out code
+      uses: actions/checkout@v4
+
+    - name: 👨‍🔧 Setup .NET Core SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.x
+
+    - name: 🔍 Enable problem matchers
+      run: echo "::add-matcher::.github/matchers/dotnet.json"
+
+    - name: 🔄 Update IdentityProxyBuilder.cs
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $file = "./SvRooij.Testcontainers.IdentityProxy/IdentityProxyBuilder.cs"
+        (Get-Content $file) -replace ':latest', ":$tag" | Set-Content $file
+    
+    - name: 🎒 Load packages
+      run: dotnet restore ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj
+
+    - name: 🛠️ Build code
+      shell: pwsh
+      run: dotnet build ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj --configuration Release --no-restore -p:Version=$("${{ github.ref_name }}".Substring(1))
+
+    - name: 📦 Pack SvRooij.Testcontainers.IdentityProxy
+      shell: pwsh
+      run: dotnet pack ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj --configuration Release --no-build -p:Version=$("${{ github.ref_name }}".Substring(1))
+
+    - name: ✈️ Publish SvRooij.Testcontainers.IdentityProxy to nuget.org
+      run: dotnet nuget push ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
+      env:
+        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}

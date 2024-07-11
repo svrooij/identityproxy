@@ -5,18 +5,19 @@ namespace IdentityProxy.Api.Identity;
 
 internal static class IdentityEndpoints
 {
-    public static void MapIdentityEndpoints(this WebApplication app, string openIdConfigUrl = "/.well-known/openid-configuration", string identityPrefix = "/api/identity")
+    public static void MapIdentityEndpoints(this WebApplication app, string? externalUrl = null,  string openIdConfigUrl = "/.well-known/openid-configuration", string identityPrefix = "/api/identity")
     {
         // Add the well known config endpoint /.well-known/openid-configuration
         // The IdentityService is injected
-        app.MapGet(openIdConfigUrl, async (IdentityService identityService, CancellationToken cancellationToken) =>
+        app.MapGet(openIdConfigUrl, async (IdentityService identityService, IConfiguration configuration, CancellationToken cancellationToken) =>
         {
             // We need to clone the configuration because we need to change the jwks uri and we don't want to change the original.
             var config = (await identityService.GetExternalOpenIdConfigurationAsync(cancellationToken))!.Clone() as OpenIdConfiguration;
-            var rootUrl = Environment.GetEnvironmentVariable("EXTERNAL_URL");
-            if (rootUrl is not null)
+            externalUrl ??= configuration.GetValue<string>("EXTERNAL_URL");
+            
+            if (externalUrl is not null)
             {
-                config!.JwksUri = new Uri(new Uri(rootUrl), $"{identityPrefix}/jwks").ToString();
+                config!.JwksUri = new Uri(new Uri(externalUrl), $"{identityPrefix}/jwks").ToString();
             }
             return Results.Ok(config);
         });

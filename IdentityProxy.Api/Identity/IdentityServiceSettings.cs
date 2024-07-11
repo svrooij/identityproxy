@@ -1,6 +1,6 @@
 ﻿namespace IdentityProxy.Api.Identity;
 
-public class IdentityServiceSettings
+internal class IdentityServiceSettings
 {
     public required string Authority { get; set; }
 

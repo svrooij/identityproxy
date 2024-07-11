@@ -23,8 +23,13 @@ FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./IdentityProxy.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-jammy-chiseled AS final
+# Not so small image
 #FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-jammy AS final
+# Small image
+#FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-jammy-chiseled AS final
+# Small image with AOT (preview)
+FROM mcr.microsoft.com/dotnet/nightly/runtime-deps:8.0-jammy-chiseled-aot as final
+
 WORKDIR /app
 EXPOSE 8080
 COPY --from=publish /app/publish .
