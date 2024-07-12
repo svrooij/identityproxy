@@ -34,8 +34,38 @@ public class IdentityProxyContainer : DockerContainer
     public async Task<TokenResult?> GetTokenAsync(TokenRequest tokenRequest, CancellationToken cancellationToken = default)
     {
         _httpClient.BaseAddress ??= new Uri($"http://{this.Hostname}:{this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT)}/");
+        TokenResult? token = null;
+        int retries = 0;
+        while(token == null && !cancellationToken.IsCancellationRequested && retries < 3)
+        {
+            try
+            {
+                token = await GetTokenInternalAsync(tokenRequest, cancellationToken);
+            }
+            catch
+            {
+                // Ignore exceptions
+            }
+            if(token == null)
+            {
+                retries++;
+                if(retries > 3)
+                {
+                    break;
+                }
+                await Task.Delay(new Random().Next(5, 50), cancellationToken);
+            }
+        }
+        return token;
+    }
+
+    private async Task<TokenResult?> GetTokenInternalAsync(TokenRequest tokenRequest, CancellationToken cancellationToken)
+    {
         var response = await _httpClient.PostAsJsonAsync("/api/identity/token", tokenRequest, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
         return await response.Content.ReadFromJsonAsync<TokenResult>(cancellationToken);
     }
 }

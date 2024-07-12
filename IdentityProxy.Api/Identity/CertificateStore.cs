@@ -3,15 +3,32 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace IdentityProxy.Api.Identity;
 
-internal class CertificateStore
+internal class CertificateStore : IDisposable
 {
     private const int VALID_FROM_MINUTES_ADJUSTMENT = -5;
     private const int VALID_UNTIL_DAYS_ADJUSTMENT = 10;
+    private readonly SemaphoreSlim semaphore = new(1, 1);
     private X509Certificate2? certificate;
 
     public X509Certificate2 GetX509Certificate2()
     {
-        return certificate ??= GenerateCertificate("TokenProxySingingCert");
+        if (certificate == null)
+        {
+            semaphore.Wait();
+            try
+            {
+                if (certificate == null)
+                {
+                    certificate = GenerateCertificate("TokenProxySingingCert");
+                }
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+
+        return certificate;
     }
 
     private static X509Certificate2 GenerateCertificate(string subjectCn, int keySize = 2048)
@@ -37,4 +54,11 @@ internal class CertificateStore
         return new X509Certificate2(cert.Export(X509ContentType.Pfx), "", X509KeyStorageFlags.Exportable);
     }
 
+    public void Dispose()
+    {
+        if (certificate != null)
+        {
+            certificate.Dispose();
+        }
+    }
 }
