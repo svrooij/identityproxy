@@ -14,7 +14,11 @@ namespace Testcontainers.IdentityProxy;
 /// </remarks>
 public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, IdentityProxyContainer, IdentityProxyConfiguration>
 {
-    private const string IDENTITY_PROXY_IMAGE = "ghcr.io/svrooij/identityproxy:latest";
+    /// <summary>
+    /// The default image for the identity proxy
+    /// </summary>
+    /// <remarks>Source has 'latest', in the nuget package this is replaced with the actual version</remarks>
+    public const string IDENTITY_PROXY_IMAGE = "ghcr.io/svrooij/identityproxy:latest";
 
     /// <summary>
     /// The internal port of the identity proxy
