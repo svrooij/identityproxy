@@ -7,6 +7,7 @@ var builder = WebApplication.CreateSlimBuilder(args);
 // Register some services
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CertificateStore>();
+builder.Services.AddSingleton(TimeProvider.System);
 
 var authority = builder.Configuration.GetValue<string>("IDENTITY_AUTHORITY") ?? throw new AppConfigurationException("IDENTITY_AUTHORITY is not set");
 builder.Services.AddSingleton(new IdentityServiceSettings { Authority = authority });

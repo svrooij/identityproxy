@@ -7,6 +7,7 @@ namespace IdentityProxy.Api.Identity.Models;
 [JsonSerializable(typeof(Jwks))]
 [JsonSerializable(typeof(TokenRequest))]
 [JsonSerializable(typeof(TokenResponse))]
+[JsonSerializable(typeof(IdentityProxyDescription))]
 internal partial class IdentityJsonSerializerContext : JsonSerializerContext
 {
 

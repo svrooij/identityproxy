@@ -1,4 +1,5 @@
 ﻿using DotNet.Testcontainers.Containers;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 
 namespace Testcontainers.IdentityProxy;
@@ -11,7 +12,8 @@ namespace Testcontainers.IdentityProxy;
 public class IdentityProxyContainer : DockerContainer
 {
     private readonly HttpClient _httpClient;
-    public IdentityProxyContainer(IdentityProxyConfiguration configuration) : base(configuration)
+    private int? _port;
+    internal IdentityProxyContainer(IdentityProxyConfiguration configuration) : base(configuration)
     {
         // Create a http client to communicate with the auth proxy and get mocked tokens
         _httpClient = new HttpClient();
@@ -23,49 +25,63 @@ public class IdentityProxyContainer : DockerContainer
     /// <remarks>The default jwt middleware, require metadata over https unless you set 'RequireHttpsMetadata' to <see langword="false"/></remarks>
     public string GetAuthority()
     {
-        return $"http://{this.Hostname}:{this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT)}/";
+        _port ??= this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT);
+        return $"http://{this.Hostname}:{_port}/";
     }
 
     /// <summary>
     /// Get a mocked token with all the claims you want in the token
     /// </summary>
     /// <param name="tokenRequest">TokenRequest</param>
+    /// <param name="cancellationToken"><see cref="CancellationToken"/> if you want to be able to cancel the call</param>
     /// <returns></returns>
-    public async Task<TokenResult?> GetTokenAsync(TokenRequest tokenRequest, CancellationToken cancellationToken = default)
+    /// <exception cref="TokenRetrievalFailedException">Thrown when the token could not be retrieved, check container log for what might be happening</exception>
+    public async Task<TokenResult> GetTokenAsync(TokenRequest tokenRequest, CancellationToken cancellationToken = default)
     {
-        _httpClient.BaseAddress ??= new Uri($"http://{this.Hostname}:{this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT)}/");
-        TokenResult? token = null;
+        ArgumentNullException.ThrowIfNull(tokenRequest);
+        this.Logger?.LogDebug("Getting token from identity proxy for audience: {Audience} with subject {Subject}", tokenRequest.Audience, tokenRequest.Subject);
+        _httpClient.BaseAddress ??= new Uri($"http://{this.Hostname}:{_port ??= this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT)}/");
+        TokenResult? tokenResult = null;
         int retries = 0;
-        while(token == null && !cancellationToken.IsCancellationRequested && retries < 3)
+        while (tokenResult == null && !cancellationToken.IsCancellationRequested && retries < 3)
         {
             try
             {
-                token = await GetTokenInternalAsync(tokenRequest, cancellationToken);
+                tokenResult = await GetTokenInternalAsync(tokenRequest, cancellationToken);
             }
-            catch
+            catch (Exception ex)
             {
+                this.Logger?.LogError(ex, "Failed to get token from identity proxy");
                 // Ignore exceptions
             }
-            if(token == null)
+            if (tokenResult == null)
             {
                 retries++;
-                if(retries > 3)
+                if (retries >= 3)
                 {
                     break;
                 }
-                await Task.Delay(new Random().Next(5, 50), cancellationToken);
+                await Task.Delay(new Random().Next(1, 10), cancellationToken);
             }
         }
-        return token;
+        return tokenResult ?? throw new TokenRetrievalFailedException();
     }
 
     private async Task<TokenResult?> GetTokenInternalAsync(TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
         var response = await _httpClient.PostAsJsonAsync("/api/identity/token", tokenRequest, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            return null;
-        }
+        // Ensure the response is successful
+        // This will throw an exception if the response is not successful
+        // which will be logged by the caller
+        response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TokenResult>(cancellationToken);
+    }
+
+    /// <summary>
+    /// Failed to get a token after 3 retries, this should never happen!
+    /// </summary>
+    public class TokenRetrievalFailedException : Exception
+    {
+        internal TokenRetrievalFailedException() : base("Failed to retrieve token from identity proxy") { }
     }
 }

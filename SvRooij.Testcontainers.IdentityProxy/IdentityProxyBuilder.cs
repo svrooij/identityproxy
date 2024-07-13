@@ -10,12 +10,15 @@ namespace Testcontainers.IdentityProxy;
 /// Builder for the <see cref="IdentityProxyContainer"/>
 /// </summary>
 /// <remarks>
-/// Call <see cref="WithAuthority(string)"/> to set the current authority, this will be mocked. Be sure to also call <see cref="WithPort(int)"/> or <see cref="WithRandomPort"/> to set the port and the "EXTERNAL_URL".
+/// Call <see cref="WithAuthority(string)"/> to set the current authority, this will be mocked.
 /// </remarks>
 public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, IdentityProxyContainer, IdentityProxyConfiguration>
 {
     private const string IDENTITY_PROXY_IMAGE = "ghcr.io/svrooij/identityproxy:latest";
 
+    /// <summary>
+    /// The internal port of the identity proxy
+    /// </summary>
     public const ushort API_PORT = 8080;
 
     /// <summary>
@@ -26,11 +29,12 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
         DockerResourceConfiguration = Init().DockerResourceConfiguration;
     }
 
-    public IdentityProxyBuilder(IdentityProxyConfiguration dockerResourceConfiguration) : base(dockerResourceConfiguration)
+    internal IdentityProxyBuilder(IdentityProxyConfiguration dockerResourceConfiguration) : base(dockerResourceConfiguration)
     {
         DockerResourceConfiguration = dockerResourceConfiguration;
     }
 
+    /// <inheritdoc/>
     protected override IdentityProxyConfiguration DockerResourceConfiguration { get; }
 
     /// <summary>
@@ -47,22 +51,26 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
             .WithEnvironment("IDENTITY_AUTHORITY", authority);
     }
 
+    /// <inheritdoc/>
     public override IdentityProxyContainer Build()
     {
         Validate();
         return new IdentityProxyContainer(DockerResourceConfiguration);
     }
 
+    /// <inheritdoc/>
     protected override IdentityProxyBuilder Clone(IContainerConfiguration resourceConfiguration)
     {
         return Merge(DockerResourceConfiguration, new IdentityProxyConfiguration(resourceConfiguration));
     }
 
+    /// <inheritdoc/>
     protected override IdentityProxyBuilder Clone(IResourceConfiguration<CreateContainerParameters> resourceConfiguration)
     {
         return Merge(DockerResourceConfiguration, new IdentityProxyConfiguration(resourceConfiguration));
     }
 
+    /// <inheritdoc/>
     protected override IdentityProxyBuilder Init()
     {
         return base.Init()
@@ -82,11 +90,13 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
             });
     }
 
+    /// <inheritdoc/>
     protected override IdentityProxyBuilder Merge(IdentityProxyConfiguration oldValue, IdentityProxyConfiguration newValue)
     {
         return new IdentityProxyBuilder(new IdentityProxyConfiguration(oldValue, newValue));
     }
 
+    /// <inheritdoc/>
     protected override void Validate()
     {
         base.Validate();
