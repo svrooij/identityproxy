@@ -11,14 +11,16 @@ internal partial class IdentityService
     private readonly HttpClient _httpClient;
     private readonly ILogger<IdentityService> _logger;
     private readonly IdentityServiceSettings _settings;
+    private readonly TimeProvider _timeProvider;
 
-    public IdentityService(IMemoryCache cache, CertificateStore certificateStore, HttpClient httpClient, ILogger<IdentityService> logger, IdentityServiceSettings settings)
+    public IdentityService(IMemoryCache cache, CertificateStore certificateStore, HttpClient httpClient, ILogger<IdentityService> logger, IdentityServiceSettings settings, TimeProvider timeProvider)
     {
         _cache = cache;
         _certificateStore = certificateStore;
         _httpClient = httpClient;
         _logger = logger;
         _settings = settings;
+        _timeProvider = timeProvider;
     }
 
     public async Task<OpenIdConfiguration?> GetExternalOpenIdConfigurationAsync(CancellationToken cancellationToken)
@@ -29,7 +31,7 @@ internal partial class IdentityService
         var result = await _cache.GetOrCreateAsync("OpenIdConfiguration", async entry =>
         {
             LogLoadingOpenIdConfiguration(_settings.Authority);
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
 
             // Load the configuration from the authority
             var response = await _httpClient.GetAsync(_settings.GetConfigUri());
@@ -50,7 +52,7 @@ internal partial class IdentityService
         {
             var config = await GetExternalOpenIdConfigurationAsync(cancellationToken);
             LogLoadingJwks(config!.JwksUri);
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
 
             // Load the jwks from the authority
             var response = await _httpClient.GetAsync(config.JwksUri);
@@ -64,7 +66,7 @@ internal partial class IdentityService
     {
         var externalJwks = await GetExternalJwksAsync(cancellationToken);
         LogGotExternalJwks(externalJwks?.Keys?.Length ?? 0);
-        var certificate = _certificateStore.GetX509Certificate2();
+        using var certificate = _certificateStore.GetX509Certificate2();
 
         using var rsa = certificate.PublicKey.GetRSAPublicKey();
         // Using an RSA Security Key here, instead of a X509SecurityKey, because the support for RSA keys is better on JWT libraries on other platforms.
@@ -98,42 +100,41 @@ internal partial class IdentityService
         var openIdConfiguration = await GetExternalOpenIdConfigurationAsync(cancellationToken);
         var certificate = _certificateStore.GetX509Certificate2();
         string token;
-        // Not using the new using syntax here, because the key seems to be disposed before the token is created.
-        using (var rsa = certificate.GetRSAPrivateKey())
+        // Not disposing the RSA key here, we got errors
+        var rsa = certificate.GetRSAPrivateKey();
+        // Using an RSA Security Key here, instead of a X509SecurityKey, because the support for RSA keys is better on JWT libraries on other platforms.
+        // And because I have not seen a lot of examples with X509SecurityKey or the 'x5t' in the jwks.
+        var securityKey = new RsaSecurityKey(rsa);
+        // WTF Microsoft, why is this empty?
+        securityKey.KeyId = Base64UrlEncoder.Encode(securityKey.ComputeJwkThumbprint());
+
+        Dictionary<string, object> claims = new()
         {
-            // Using an RSA Security Key here, instead of a X509SecurityKey, because the support for RSA keys is better on JWT libraries on other platforms.
-            var securityKey = new RsaSecurityKey(rsa);
-            // WTF Microsoft, why is this empty?
-            securityKey.KeyId = Base64UrlEncoder.Encode(securityKey.ComputeJwkThumbprint());
-
-            Dictionary<string, object> claims = new()
+            ["sub"] = request.Subject
+        };
+        if (request.AdditionalData is not null)
+        {
+            foreach (var (key, value) in request.AdditionalData)
             {
-                ["sub"] = request.Subject
-            };
-            if (request.AdditionalData is not null)
-            {
-                foreach (var (key, value) in request.AdditionalData)
-                {
-                    claims[key] = value;
-                }
+                claims[key] = value;
             }
-
-            var descriptor = new SecurityTokenDescriptor
-            {
-                Audience = request.Audience,
-                Issuer = request.Issuer ?? openIdConfiguration?.Issuer!,
-                Claims = claims,
-                IssuedAt = DateTime.UtcNow,
-                NotBefore = DateTime.UtcNow.AddSeconds(-10),
-                Expires = DateTime.UtcNow.AddSeconds(request.Lifetime),
-                SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256),
-            };
-
-            var handler = new Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler();
-            handler.SetDefaultTimesOnTokenCreation = false;
-
-            token = handler.CreateToken(descriptor);
         }
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Audience = request.Audience,
+            Issuer = request.Issuer ?? openIdConfiguration?.Issuer!,
+            Claims = claims,
+            IssuedAt = now,
+            NotBefore = now.AddSeconds(-10), // 10 seconds clock skew
+            Expires = now.AddSeconds(request.Lifetime),
+            SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256),
+        };
+
+        var handler = new Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler();
+        handler.SetDefaultTimesOnTokenCreation = false;
+
+        token = handler.CreateToken(descriptor);
 
         return new TokenResponse
         {

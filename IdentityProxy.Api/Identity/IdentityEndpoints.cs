@@ -6,6 +6,15 @@ internal static class IdentityEndpoints
 {
     public static void MapIdentityEndpoints(this WebApplication app, string? externalUrl = null, string openIdConfigUrl = "/.well-known/openid-configuration", string identityPrefix = "/api/identity")
     {
+        app.MapGet("/", async (IConfiguration configuration, CancellationToken cancellationToken) =>
+        {
+            return Results.Ok(new IdentityProxyDescription
+            {
+                Authority = configuration.GetValue<string>("IDENTITY_AUTHORITY") ?? "Configure 'IDENTITY_AUTHORITY' in Environment!",
+                ExternalUrl = externalUrl ?? configuration.GetValue<string>("EXTERNAL_URL") ?? "Configure 'EXTERNAL_URL' in environment"
+            });
+        });
+
         // Add the well known config endpoint /.well-known/openid-configuration
         // The IdentityService is injected
         app.MapGet(openIdConfigUrl, async (IdentityService identityService, IConfiguration configuration, CancellationToken cancellationToken) =>

@@ -8,26 +8,39 @@ namespace Testcontainers.IdentityProxy;
 /// </summary>
 public sealed class IdentityProxyConfiguration : ContainerConfiguration
 {
+    /// <summary>
+    /// <see cref="IdentityProxyConfiguration"/> constructor with just an authority
+    /// </summary>
+    /// <param name="authority"></param>
     public IdentityProxyConfiguration(string? authority = null)
     {
         Authority = authority;
     }
 
-    public IdentityProxyConfiguration(IResourceConfiguration<CreateContainerParameters> resourceConfiguration) : base(resourceConfiguration)
+    /// <summary>
+    /// <see cref="IdentityProxyConfiguration"/> constructor with a <see cref="IResourceConfiguration{TResource}"/>
+    /// </summary>
+    /// <param name="resourceConfiguration">Resource configuration</param>
+    internal IdentityProxyConfiguration(IResourceConfiguration<CreateContainerParameters> resourceConfiguration) : base(resourceConfiguration)
     {
     }
 
-    public IdentityProxyConfiguration(IContainerConfiguration resourceConfiguration)
-        : base(resourceConfiguration)
+    /// <summary>
+    /// <see cref="IdentityProxyConfiguration"/> constructor with a <see cref="IContainerConfiguration"/>
+    /// </summary>
+    /// <param name="containerConfiguration">Container configuration</param>
+    internal IdentityProxyConfiguration(IContainerConfiguration containerConfiguration)
+        : base(containerConfiguration)
     {
         // Passes the configuration upwards to the base implementations to create an updated immutable copy.
     }
 
-    public IdentityProxyConfiguration(IdentityProxyConfiguration resourceConfiguration) : this(new IdentityProxyConfiguration(), resourceConfiguration)
-    {
-    }
-
-    public IdentityProxyConfiguration(IdentityProxyConfiguration oldValue, IdentityProxyConfiguration newValue) : base(oldValue, newValue)
+    /// <summary>
+    /// Merge two <see cref="IdentityProxyConfiguration"/> instances
+    /// </summary>
+    /// <param name="oldValue">Previous value</param>
+    /// <param name="newValue">New properties to merge</param>
+    internal IdentityProxyConfiguration(IdentityProxyConfiguration oldValue, IdentityProxyConfiguration newValue) : base(oldValue, newValue)
     {
         Authority = BuildConfiguration.Combine(oldValue.Authority, newValue.Authority);
     }
