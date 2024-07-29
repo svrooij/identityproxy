@@ -47,12 +47,27 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
     /// <param name="authority">Authority url (eg. 'https://login.microsoftonline.com/{tenant-id}/v2.0/')</param>
     public IdentityProxyBuilder WithAuthority(string authority)
     {
-        if (Uri.TryCreate(authority, UriKind.Absolute, out var uri) && !uri.Scheme.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        if (!Uri.TryCreate(authority, UriKind.Absolute, out var uri) || !uri.Scheme.StartsWith("http", StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException("The authority must be a valid url", nameof(authority));
         }
         return Merge(DockerResourceConfiguration, new IdentityProxyConfiguration(authority: authority))
             .WithEnvironment("IDENTITY_AUTHORITY", authority);
+    }
+
+    /// <summary>
+    /// Set the OpenTelemetry endpoint
+    /// </summary>
+    /// <param name="endpoint">The actual endpoint</param>
+    /// <returns></returns>
+    public IdentityProxyBuilder WithOtelEndpoint(string endpoint)
+    {
+        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) || !uri.Scheme.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("The otel endpoint must be a valid url", nameof(endpoint));
+        }
+        return Merge(DockerResourceConfiguration, new IdentityProxyConfiguration(otelEndpoint: endpoint))
+            .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", endpoint);
     }
 
     /// <inheritdoc/>

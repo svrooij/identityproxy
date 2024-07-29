@@ -1,11 +1,11 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 // This is how you would use the Testcontainers.IdentityProxy library
-using IdentityProxy.Test;
 using Testcontainers.IdentityProxy;
 
 var identityProxy = new IdentityProxyBuilder()
     .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/")
+    .WithOtelEndpoint("http://host.docker.internal:4317")
     .Build();
 
 await identityProxy.StartAsync();

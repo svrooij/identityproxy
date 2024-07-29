@@ -7,7 +7,8 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "IDENTITY_AUTHORITY": "https://login.microsoftonline.com/svrooij.io/v2.0/",
-        "EXTERNAL_URL": "http://localhost:5256"
+        "EXTERNAL_URL": "http://localhost:5256",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://127.0.0.1:4317"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5256"
@@ -18,7 +19,8 @@
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/openid-configuration",
       "environmentVariables": {
         "ASPNETCORE_HTTP_PORTS": "8080",
-        "IDENTITY_AUTHORITY": "https://login.microsoftonline.com/svrooij.io/v2.0/"
+        "IDENTITY_AUTHORITY": "https://login.microsoftonline.com/svrooij.io/v2.0/",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://host.docker.internal:4317"
       },
       "publishAllPorts": true
     }

@@ -12,9 +12,11 @@ public sealed class IdentityProxyConfiguration : ContainerConfiguration
     /// <see cref="IdentityProxyConfiguration"/> constructor with just an authority
     /// </summary>
     /// <param name="authority"></param>
-    public IdentityProxyConfiguration(string? authority = null)
+    /// <param name="otelEndpoint"></param>
+    public IdentityProxyConfiguration(string? authority = null, string? otelEndpoint = null)
     {
         Authority = authority;
+        OtelEndpoint = otelEndpoint;
     }
 
     /// <summary>
@@ -43,6 +45,7 @@ public sealed class IdentityProxyConfiguration : ContainerConfiguration
     internal IdentityProxyConfiguration(IdentityProxyConfiguration oldValue, IdentityProxyConfiguration newValue) : base(oldValue, newValue)
     {
         Authority = BuildConfiguration.Combine(oldValue.Authority, newValue.Authority);
+        OtelEndpoint = BuildConfiguration.Combine(oldValue.OtelEndpoint, newValue.OtelEndpoint);
     }
 
     /// <summary>
@@ -50,4 +53,9 @@ public sealed class IdentityProxyConfiguration : ContainerConfiguration
     /// </summary>
     /// <remarks>Will be append with `/.well-known/openid-configuration`</remarks>
     public string? Authority { get; set; }
+
+    /// <summary>
+    /// The OpenTelemetry collector endpoint
+    /// </summary>
+    public string? OtelEndpoint { get; set; }
 }

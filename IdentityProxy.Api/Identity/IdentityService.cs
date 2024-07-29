@@ -1,6 +1,7 @@
 ﻿using IdentityProxy.Api.Identity.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 namespace IdentityProxy.Api.Identity;
 
@@ -12,8 +13,9 @@ internal partial class IdentityService
     private readonly ILogger<IdentityService> _logger;
     private readonly IdentityServiceSettings _settings;
     private readonly TimeProvider _timeProvider;
+    private readonly ActivitySource? _activitySource;
 
-    public IdentityService(IMemoryCache cache, CertificateStore certificateStore, HttpClient httpClient, ILogger<IdentityService> logger, IdentityServiceSettings settings, TimeProvider timeProvider)
+    public IdentityService(IMemoryCache cache, CertificateStore certificateStore, HttpClient httpClient, ILogger<IdentityService> logger, IdentityServiceSettings settings, TimeProvider timeProvider, ActivitySource? activitySource = null)
     {
         _cache = cache;
         _certificateStore = certificateStore;
@@ -21,20 +23,26 @@ internal partial class IdentityService
         _logger = logger;
         _settings = settings;
         _timeProvider = timeProvider;
+        _activitySource = activitySource;
     }
 
     public async Task<OpenIdConfiguration?> GetExternalOpenIdConfigurationAsync(CancellationToken cancellationToken)
     {
+        
         LogGettingOpenIdConfiguration(_settings.Authority);
 
         // GetOrCreate will cache when needed or return the cached value
         var result = await _cache.GetOrCreateAsync("OpenIdConfiguration", async entry =>
         {
+            using var activity = _activitySource?.StartActivity(ActivityKind.Producer, tags: [new ("idp.authority", _settings.Authority)], name: "LoadOpenIDConfiguration");
             LogLoadingOpenIdConfiguration(_settings.Authority);
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
 
             // Load the configuration from the authority
-            var response = await _httpClient.GetAsync(_settings.GetConfigUri());
+            var request = new HttpRequestMessage(HttpMethod.Get, _settings.GetConfigUri());
+            request.Headers.TryAddWithoutValidation("traceparent", activity?.Id);
+
+            var response = await _httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadFromJsonAsync(IdentityJsonSerializerContext.Default.OpenIdConfiguration, cancellationToken);
@@ -45,11 +53,13 @@ internal partial class IdentityService
 
     public async Task<Jwks?> GetExternalJwksAsync(CancellationToken cancellationToken)
     {
+        
         LogGettingJwks();
 
         // Check if we loaded the jwks already
         return await _cache.GetOrCreateAsync("Jwks", async entry =>
         {
+            using var activity = _activitySource?.StartActivity("GetExternalJwksAsync");
             var config = await GetExternalOpenIdConfigurationAsync(cancellationToken);
             LogLoadingJwks(config!.JwksUri);
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
@@ -96,6 +106,7 @@ internal partial class IdentityService
 
     public async Task<TokenResponse> GetTokenAsync(TokenRequest request, CancellationToken cancellationToken)
     {
+        using var activity = _activitySource?.StartActivity(ActivityKind.Producer, tags: [new ("idp.audience",request.Audience), new ("idp.issuer", request.Issuer), new ("idp.subject", request.Subject)], name: "ExecuteTokenRequest");
         LogGeneratingToken(request.Audience, request.Subject);
         var openIdConfiguration = await GetExternalOpenIdConfigurationAsync(cancellationToken);
         var certificate = _certificateStore.GetX509Certificate2();

@@ -4,6 +4,9 @@ using IdentityProxy.Api.Identity.Models;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
+// Add sensible defaults to the builder
+// This will register OpenTelemetry if provided by environment variables
+builder.AddSensibleDefaults();
 // Register some services
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CertificateStore>();

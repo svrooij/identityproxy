@@ -1,5 +1,6 @@
 ﻿using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Net.Http.Json;
 
 namespace Testcontainers.IdentityProxy;
@@ -39,6 +40,7 @@ public class IdentityProxyContainer : DockerContainer
     public async Task<TokenResult> GetTokenAsync(TokenRequest tokenRequest, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(tokenRequest);
+        using var activity = Activity.Current?.Source?.StartActivity(ActivityKind.Client, name: "GetTokenAsync");
         this.Logger?.LogDebug("Getting token from identity proxy for audience: {Audience} with subject {Subject}", tokenRequest.Audience, tokenRequest.Subject);
         _httpClient.BaseAddress ??= new Uri($"http://{this.Hostname}:{_port ??= this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT)}/");
         TokenResult? tokenResult = null;
@@ -69,7 +71,13 @@ public class IdentityProxyContainer : DockerContainer
 
     private async Task<TokenResult?> GetTokenInternalAsync(TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync("/api/identity/token", tokenRequest, cancellationToken);
+        using var activity = Activity.Current?.Source?.StartActivity(ActivityKind.Client, name: "GetTokenInternalAsync");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/identity/token")
+        {
+            Content = JsonContent.Create(tokenRequest)
+        };
+        request.Headers.TryAddWithoutValidation("traceparent", activity?.Context.ToString());
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         // Ensure the response is successful
         // This will throw an exception if the response is not successful
         // which will be logged by the caller

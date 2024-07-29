@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 namespace IdentityProxy.Api.Identity;
@@ -13,14 +14,16 @@ internal class CertificateStore : IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly SemaphoreSlim semaphore = new(1, 1);
     private X509Certificate2? certificate;
+    private readonly ActivitySource? _activitySource;
 
     /// <summary>
     /// Certificate Store to generate a certificate to sign the tokens
     /// </summary>
     /// <param name="timeProvider"></param>
-    public CertificateStore(TimeProvider timeProvider)
+    public CertificateStore(TimeProvider timeProvider, ActivitySource? activitySource = null)
     {
         _timeProvider = timeProvider;
+        _activitySource = activitySource;
     }
 
     /// <inheritdoc/>
@@ -38,6 +41,7 @@ internal class CertificateStore : IDisposable
     /// <remarks>By design the certificate is not stored anywhere, this 'IdentityProxy' is meant to fake tokens during integration tests. And is by no means to ever be exposed to the internet!</remarks>
     public X509Certificate2 GetX509Certificate2()
     {
+        using var activity = _activitySource?.StartActivity("GetX509Certificate2");
         // Double-checked locking
         // We only want to generate the certificate once
         if (certificate == null)
@@ -62,6 +66,7 @@ internal class CertificateStore : IDisposable
 
     private static X509Certificate2 GenerateCertificate(string subjectCn, DateTimeOffset now, int keySize = 2048)
     {
+        using var activity = Activity.Current?.Source?.StartActivity(ActivityKind.Internal, tags: [new ("idp.cert.subject", subjectCn)], name: nameof(GenerateCertificate));
         using var rsa = RSA.Create(keySize); // Generate a new RSA key pair
 
         var request = new CertificateRequest($"CN={subjectCn}", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
@@ -78,6 +83,9 @@ internal class CertificateStore : IDisposable
 
         // Create the certificate
         var cert = request.CreateSelfSigned(notBefore, notAfter);
+        activity?.SetTag("idp.cert.notBefore", notBefore);
+        activity?.SetTag("idp.cert.notAfter", notAfter);
+        activity?.SetTag("idp.cert.thumbprint", cert.Thumbprint);
 
         // Export the certificate with the private key, then re-import it to generate an X509Certificate2 object
         return new X509Certificate2(cert.Export(X509ContentType.Pfx), "", X509KeyStorageFlags.Exportable);
