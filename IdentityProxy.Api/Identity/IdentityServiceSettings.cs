@@ -6,6 +6,7 @@ internal class IdentityServiceSettings
 
     internal Uri GetConfigUri()
     {
-        return new Uri(new Uri(Authority), ".well-known/openid-configuration");
+        var authority = !Authority.EndsWith("/") ? $"{Authority}/" : Authority;
+        return new Uri(new Uri(authority), ".well-known/openid-configuration");
     }
 }
