@@ -1,14 +1,46 @@
-name: Release Docker Image
+name: Test and Publish
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
+  test-container:
+    name: 🧪 Test Docker Container
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧑‍💻 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 👨‍🔧 Setup .NET Core SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - name: 🐳 Build Docker image
+        run: docker build -t svrooij/identityproxyapi:test -f ./IdentityProxy.Api/Dockerfile .
+        working-directory: ./src
+
+      - name: 📦 Restore packages
+        run: dotnet restore
+
+      - name: 🔨 Build solution
+        run: dotnet build
+
+      - name: 🧪 Run tests
+        run: dotnet test
+
   build-docker:
     name: 📦 Push IdentityProxy to GitHub Container Registry
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: test-container
     permissions:
       contents: read
       packages: write
@@ -30,17 +62,24 @@ jobs:
         id: tag_name
         run: echo "::set-output name=TAG_NAME::${GITHUB_REF#refs/tags/}"
       
+      - name: 📃 Extract version from tag
+        id: version
+        run: echo "::set-output name=VERSION::${GITHUB_REF#refs/tags/v}"
+      
       - name: 👷 Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./IdentityProxy.Api/Dockerfile
+          context: ./src
+          file: ./src/IdentityProxy.Api/Dockerfile
           push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
           tags: ghcr.io/${{ github.repository}}:${{ steps.tag_name.outputs.TAG_NAME }},ghcr.io/${{ github.repository}}:latest
 
   build-nuget:
     name: 📦 Push IdentityProxy to nuget.org
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
     needs: build-docker
     steps:
     - name: 👨‍💻 Check-out code
