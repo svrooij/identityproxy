@@ -16,7 +16,7 @@ public class TokenRequest
     /// The audience of the token
     /// </summary>
     [JsonPropertyName("aud")]
-    public required string Audience { get; set; }
+    public string? Audience { get; set; }
 
     /// <summary>
     /// The issuer of the token (optional)

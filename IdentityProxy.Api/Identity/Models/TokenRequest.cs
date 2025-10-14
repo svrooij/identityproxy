@@ -7,7 +7,7 @@ public class TokenRequest
     [JsonPropertyName("expires_in")]
     public int Lifetime { get; set; } = 3600;
     [JsonPropertyName("aud")]
-    public string Audience { get; set; } = default!;
+    public string? Audience { get; set; }
     [JsonPropertyName("iss")]
     public string? Issuer { get; set; }
     [JsonPropertyName("sub")]

@@ -18,7 +18,8 @@
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/openid-configuration",
       "environmentVariables": {
         "ASPNETCORE_HTTP_PORTS": "8080",
-        "IDENTITY_AUTHORITY": "https://login.microsoftonline.com/svrooij.io/v2.0/"
+        "IDENTITY_AUTHORITY": "https://login.microsoftonline.com/svrooij.io/v2.0/",
+        "EXTERNAL_URL": "http://localhost:8080"
       },
       "publishAllPorts": true
     }
