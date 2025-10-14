@@ -67,6 +67,45 @@ public class IdentityProxyContainer : DockerContainer
         return tokenResult ?? throw new TokenRetrievalFailedException();
     }
 
+    /// <summary>
+    /// Get a mocked token from an existing token by duplicating it
+    /// </summary>
+    /// <param name="token">JWT to duplicate</param>
+    /// <param name="cancellationToken"><see cref="CancellationToken"/> if you want to be able to cancel the call</param>
+    /// <returns></returns>
+    /// <exception cref="TokenRetrievalFailedException">Thrown when the token could not be retrieved, check container log for what might be happening</exception>
+    /// <remarks>Strip of the signature and the last dot if you're planning to put this token in your source.</remarks>
+    public async Task<TokenResult> DuplicateTokenAsync(string token, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(token);
+        this.Logger?.LogDebug("Getting token from identity proxy {Token}", token);
+        _httpClient.BaseAddress ??= new Uri($"http://{this.Hostname}:{_port ??= this.GetMappedPublicPort(IdentityProxyBuilder.API_PORT)}/");
+        TokenResult? tokenResult = null;
+        int retries = 0;
+        while (tokenResult == null && !cancellationToken.IsCancellationRequested && retries < 3)
+        {
+            try
+            {
+                tokenResult = await DuplicateTokenInternalAsync(token, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                this.Logger?.LogError(ex, "Failed to get token from identity proxy");
+                // Ignore exceptions
+            }
+            if (tokenResult == null)
+            {
+                retries++;
+                if (retries >= 3)
+                {
+                    break;
+                }
+                await Task.Delay(new Random().Next(1, 10), cancellationToken);
+            }
+        }
+        return tokenResult ?? throw new TokenRetrievalFailedException();
+    }
+
     private async Task<TokenResult?> GetTokenInternalAsync(TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
         var response = await _httpClient.PostAsJsonAsync("/api/identity/token", tokenRequest, cancellationToken);
@@ -74,6 +113,21 @@ public class IdentityProxyContainer : DockerContainer
         // This will throw an exception if the response is not successful
         // which will be logged by the caller
         response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<TokenResult>(cancellationToken);
+    }
+
+    private async Task<TokenResult?> DuplicateTokenInternalAsync(string token, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new ArgumentNullException(nameof(token));
+        }
+        var response = await _httpClient.PostAsJsonAsync("/api/identity/duplicate-token", new DuplicateTokenRequest { Token = token }, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            this.Logger?.LogWarning("Failed to duplicate token, status code: {StatusCode}", response.StatusCode);
+            return null;
+        }
         return await response.Content.ReadFromJsonAsync<TokenResult>(cancellationToken);
     }
 

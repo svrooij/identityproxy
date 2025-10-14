@@ -94,6 +94,12 @@ internal partial class IdentityService
         };
     }
 
+    /// <summary>
+    /// Generated a new token based on the provided TokenRequest
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<TokenResponse> GetTokenAsync(TokenRequest request, CancellationToken cancellationToken)
     {
         LogGeneratingToken(request.Audience, request.Subject);
@@ -122,7 +128,7 @@ internal partial class IdentityService
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var descriptor = new SecurityTokenDescriptor
         {
-            Audience = request.Audience,
+            Audience = request.Audience ?? "specify-audience-in-token-request",
             Issuer = request.Issuer ?? openIdConfiguration?.Issuer!,
             Claims = claims,
             IssuedAt = now,
@@ -141,6 +147,48 @@ internal partial class IdentityService
             AccessToken = token,
             ExpiresIn = request.Lifetime,
         };
+    }
+
+    // These claims are excluded when duplicating a token, since they are copied during token creation
+    private static readonly string[] _excludedFromDuplication = ["iat", "nbf", "exp", "jti", "sub", "aud", "iss"];
+
+    /// <summary>
+    /// Generate a new valid token based on an existing token.
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    public async Task<TokenResponse?> GetTokenAsync(string token, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new ArgumentNullException(nameof(token));
+        }
+        var handler = new Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler();
+        handler.MapInboundClaims = false;
+        if (token.Count(c => c == '.') == 1)
+        {
+            // Add fake signature to make it a semantically correct jwt
+            // this allows for duplication of tokens that are not signed or where the signature is not sent here
+            token += ".a";
+        }
+        if (!handler.CanReadToken(token))
+        {
+            _logger.LogWarning("Cannot read token: {Token}", token);
+            return null;
+        }
+        var jwt = handler.ReadJsonWebToken(token);
+        int lifetime = (int)(jwt.ValidTo - jwt.ValidFrom).TotalSeconds;
+        var request = new TokenRequest
+        {
+            Audience = jwt.Audiences.FirstOrDefault(),
+            Subject = jwt.Subject,
+            Issuer = jwt.Issuer,
+            AdditionalData = jwt.Claims.Where(c => !_excludedFromDuplication.Contains(c.Type)).ToDictionary(c => c.Type, c => (object)c.Value),
+            Lifetime = lifetime
+        };
+        return await GetTokenAsync(request, cancellationToken);
     }
 
     // Use Log source generator, for more speed.
@@ -163,5 +211,5 @@ internal partial class IdentityService
     private partial void LogInjectingCertificate(string kid);
 
     [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "Generating token for audience: '{Audience}' subject: '{Subject}'")]
-    private partial void LogGeneratingToken(string Audience, string Subject);
+    private partial void LogGeneratingToken(string? Audience, string Subject);
 }

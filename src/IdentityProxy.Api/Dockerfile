@@ -12,16 +12,18 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     clang zlib1g-dev
 ARG BUILD_CONFIGURATION=Release
+ARG VERSION=1.0.0
 WORKDIR /src
 COPY ["IdentityProxy.Api/IdentityProxy.Api.csproj", "IdentityProxy.Api/"]
 RUN dotnet restore "./IdentityProxy.Api/IdentityProxy.Api.csproj"
 COPY . .
 WORKDIR "/src/IdentityProxy.Api"
-RUN dotnet build "./IdentityProxy.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./IdentityProxy.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build -p:Version=$VERSION
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./IdentityProxy.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true
+ARG VERSION=1.0.0
+RUN dotnet publish "./IdentityProxy.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=true -p:Version=$VERSION
 
 # Not so small image
 #FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-jammy AS final

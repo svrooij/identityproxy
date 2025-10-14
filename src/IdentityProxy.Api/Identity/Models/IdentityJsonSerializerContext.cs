@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace IdentityProxy.Api.Identity.Models;
 
+[JsonSerializable(typeof(DuplicateTokenRequest))]
 [JsonSerializable(typeof(OpenIdConfiguration))]
 [JsonSerializable(typeof(Jwks))]
 [JsonSerializable(typeof(TokenRequest))]

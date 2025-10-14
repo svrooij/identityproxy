@@ -4,11 +4,14 @@ IdentityProxy is a proxy that sits between your API (protected with tokens from 
 
 ## Usage
 
-The best way to use IdentityProxy is the run it as a [TestContainer](https://www.testcontainers.org/). This way you can start the proxy in your test setup, and it will be automatically stopped when the tests are done.
+The best way to use IdentityProxy is the run it as a [TestContainer](https://www.testcontainers.org/).
+This way you can start the proxy in your test setup, and it will be automatically stopped when the tests are done.
+
+Check out [this example project](https://github.com/svrooij/demo-api-with-auth/tree/main/tests/Svrooij.Demo.Api.Tests) on how to test a protected API using IdentityProxy as TestContainer and the `WebApplicationFactory`.
 
 ### TestContainer .NET
 
-> This is a work in progress, and the API might change. And the TestContainer library is not yet released.
+[Nuget package](https://www.nuget.org/packages/SvRooij.Testcontainers.IdentityProxy)
 
 ```csharp
 using Testcontainers.IdentityProxy;
@@ -69,7 +72,10 @@ Content-Type: application/json
 }
 ```
 
-The `sub` (Subject) claim is required, as well as the `aud` (Audience) claim. Any additional claims you provide will be added to the token. The `nbf` (Not Before) and `exp` (Expiration) claims are automatically added to the token, you can however control the lifetime of the token by providing the `expires_in` claim, with the number of seconds you want to token to be valid.
+The `sub` (Subject) claim is required, everything else is optional.
+Microsoft Entra also uses the `aud` (Audience) claim, so this is always set in the token.
+Any additional claims you provide will be added to the token.
+The `nbf` (Not Before) and `exp` (Expiration) claims are automatically added to the token, you can however control the lifetime of the token by providing the `expires_in` parameter, with the number of seconds you want to token to be valid.
 
 And you'll get a response like this:
 
@@ -79,6 +85,26 @@ And you'll get a response like this:
   "expires_in": 3600,
 }
 ```
+
+### Duplicate a real token
+
+If you have a real token, and you want a not expired version of it, you can post it to the `/api/identity/duplicate-token` endpoint.
+The proxy will decode the token, and create a new token with the same claims, but with a new expiration time.
+
+> For security reasons, you should make sure to strip of part of the signature, or to replace the signature with a dummy value!
+
+```http
+POST http://localhost:8080/api/identity/duplicate-token
+Accept: application/json
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImZqQjMzS1E2OGhoQk5OSUZUMERuS3Roa3g1dURtaV9RWEpENGhnTGVUMEUiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiI2MmViMjQxMi1mNDEwLTRlMjMtOTVlNy02YTkxMTQ2YmMzMmMiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vZGY2OGFhMDMtNDhlYi00YjA5LTlmM2UtOGFlY2M1OGUyMDdjL3YyLjAiLCJleHAiOjE3NjA0Njg2MzAsImlhdCI6MTc2MDQ2NTAzMCwibmJmIjoxNzYwNDY1MDIwLCJzdWIiOiI5OWYwY2JhYS1iM2JiLTRhNzctODFhNS1lOGQxN2IyMjMyZWMiLCJzdXBlcl9zcGVjaWFsX2NsYWltIjoiYmxhYmxhIn0",
+}
+```
+
+This will give you the same answer as above.
+
 
 ## How does it work?
 

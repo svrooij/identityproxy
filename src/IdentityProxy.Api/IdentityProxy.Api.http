@@ -1,0 +1,29 @@
+@IdentityProxy.Api_HostAddress = http://host.docker.internal:32769
+
+###
+
+# Generate a token with custom claims
+
+POST {{IdentityProxy.Api_HostAddress}}/api/identity/token
+Accept: application/json
+Content-Type: application/json
+
+{
+  "aud": "62eb2412-f410-4e23-95e7-6a91146bc32c",
+  "sub": "99f0cbaa-b3bb-4a77-81a5-e8d17b2232ec",
+  "super_special_claim":"blabla"
+}
+
+###
+
+# Generate a token based on an existing token
+
+POST {{IdentityProxy.Api_HostAddress}}/api/identity/duplicate-token
+Accept: application/json
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImZqQjMzS1E2OGhoQk5OSUZUMERuS3Roa3g1dURtaV9RWEpENGhnTGVUMEUiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiI2MmViMjQxMi1mNDEwLTRlMjMtOTVlNy02YTkxMTQ2YmMzMmMiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vZGY2OGFhMDMtNDhlYi00YjA5LTlmM2UtOGFlY2M1OGUyMDdjL3YyLjAiLCJleHAiOjE3NjA0Njg2MzAsImlhdCI6MTc2MDQ2NTAzMCwibmJmIjoxNzYwNDY1MDIwLCJzdWIiOiI5OWYwY2JhYS1iM2JiLTRhNzctODFhNS1lOGQxN2IyMjMyZWMiLCJzdXBlcl9zcGVjaWFsX2NsYWltIjoiYmxhYmxhIn0.a"
+}
+
+###
