@@ -44,7 +44,7 @@ internal static class IdentityEndpoints
 
         // Add the token endpoint {identityPrefix}/token
         // The IdentityService is injected and the TokenRequest is bound from the request body
-        identityApi.MapPost("/token", async (IdentityService identityService, [FromBody]TokenRequest request, CancellationToken cancellationToken) =>
+        identityApi.MapPost("/token", async (IdentityService identityService, [FromBody] TokenRequest request, CancellationToken cancellationToken) =>
         {
             var token = await identityService.GetTokenAsync(request, cancellationToken);
             return Results.Ok(token);
@@ -52,7 +52,7 @@ internal static class IdentityEndpoints
 
         // Add the token endpoint {identityPrefix}/duplicate-token
         // The IdentityService is injected and the token to duplicate is bound from the request body
-        identityApi.MapPost("/duplicate-token", async (IdentityService identityService, [FromBody]DuplicateTokenRequest tokenRequest, CancellationToken cancellationToken) =>
+        identityApi.MapPost("/duplicate-token", async (IdentityService identityService, [FromBody] DuplicateTokenRequest tokenRequest, CancellationToken cancellationToken) =>
         {
             var newToken = await identityService.GetTokenAsync(tokenRequest.Token, cancellationToken);
             if (newToken is null)

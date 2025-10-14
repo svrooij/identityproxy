@@ -7,7 +7,7 @@ public class IdentityProxyInitializationTests
     private static IdentityProxyContainer? _container;
 
     [Before(Class)]
-    public static async Task ContainerSetup()
+    public static void ContainerSetup()
     {
         if (_container == null)
         {
@@ -15,7 +15,7 @@ public class IdentityProxyInitializationTests
                 .WithImage("svrooij/identityproxyapi:test") // Use the test image, make sure this is available locally
                 .WithImagePullPolicy((_) => false) // Don't pull the image, use the local one
                 .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/");
-                
+
             _container = builder.Build();
         }
     }
