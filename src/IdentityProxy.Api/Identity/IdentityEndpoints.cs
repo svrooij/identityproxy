@@ -7,7 +7,7 @@ internal static class IdentityEndpoints
 {
     public static void MapIdentityEndpoints(this WebApplication app, string? externalUrl = null, string openIdConfigUrl = "/.well-known/openid-configuration", string identityPrefix = "/api/identity")
     {
-        app.MapGet("/", async (IConfiguration configuration, CancellationToken cancellationToken) =>
+        app.MapGet("/", (IConfiguration configuration, CancellationToken cancellationToken) =>
         {
             return Results.Ok(new IdentityProxyDescription
             {
