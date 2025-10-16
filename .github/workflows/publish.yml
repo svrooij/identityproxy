@@ -80,6 +80,9 @@ jobs:
   build-nuget:
     name: 📦 Push IdentityProxy to nuget.org
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     if: startsWith(github.ref, 'refs/tags/')
     needs: build-docker
     steps:
@@ -98,21 +101,25 @@ jobs:
       shell: pwsh
       run: |
         $tag = "${{ github.ref_name }}"
-        $file = "./SvRooij.Testcontainers.IdentityProxy/IdentityProxyBuilder.cs"
+        $file = "./src/SvRooij.Testcontainers.IdentityProxy/IdentityProxyBuilder.cs"
         (Get-Content $file) -replace ':latest', ":$tag" | Set-Content $file
     
     - name: 🎒 Load packages
-      run: dotnet restore ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj
+      run: dotnet restore ./src/SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj
 
     - name: 🛠️ Build code
       shell: pwsh
-      run: dotnet build ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj --configuration Release --no-restore -p:Version=$("${{ github.ref_name }}".Substring(1))
+      run: dotnet build ./src/SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj --configuration Release --no-restore -p:Version=$("${{ github.ref_name }}".Substring(1))
 
     - name: 📦 Pack SvRooij.Testcontainers.IdentityProxy
       shell: pwsh
-      run: dotnet pack ./SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj --configuration Release --no-build -p:Version=$("${{ github.ref_name }}".Substring(1))
+      run: dotnet pack ./src/SvRooij.Testcontainers.IdentityProxy/SvRooij.Testcontainers.IdentityProxy.csproj --configuration Release --no-build -p:Version=$("${{ github.ref_name }}".Substring(1))
+
+    - name: 🔑 Nuget trusted publishing
+      uses: NuGet/login@v1
+      id: nuget_login
+      with:
+        user: svrooij
 
     - name: ✈️ Publish SvRooij.Testcontainers.IdentityProxy to nuget.org
-      run: dotnet nuget push ./SvRooij.Testcontainers.IdentityProxy/**/SvRooij.Testcontainers.IdentityProxy.*.nupkg -k $NUGET_AUTH_TOKEN -s https://api.nuget.org/v3/index.json
-      env:
-        NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
+      run: dotnet nuget push ./src/SvRooij.Testcontainers.IdentityProxy/**/SvRooij.Testcontainers.IdentityProxy.*.nupkg --api-key ${{steps.nuget_login.outputs.NUGET_API_KEY}} -s https://api.nuget.org/v3/index.json
