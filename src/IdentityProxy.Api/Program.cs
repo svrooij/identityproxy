@@ -1,6 +1,7 @@
 using IdentityProxy.Api;
 using IdentityProxy.Api.Identity;
 using IdentityProxy.Api.Identity.Models;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateSlimBuilder(args);
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<CertificateStore>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddOpenApi();
 
 var authority = builder.Configuration.GetValue<string>("IDENTITY_AUTHORITY") ?? throw new AppConfigurationException("IDENTITY_AUTHORITY is not set");
 builder.Services.AddSingleton(new IdentityServiceSettings { Authority = authority });
@@ -23,5 +25,14 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 var app = builder.Build();
 // Add the identity endpoints
 app.MapIdentityEndpoints(externalUrl: app.Configuration.GetValue<string>("EXTERNAL_URL"));
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.Title = "Identity Proxy API";
+    options.HideClientButton = true;
+    options.DarkMode = true;
+    options.DynamicBaseServerUrl = true;
+});
+
 app.Logger.LogInformation("IdentityProxy will proxy authority: {Authority}", authority);
 await app.RunAsync();

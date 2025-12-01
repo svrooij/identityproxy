@@ -62,6 +62,20 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
         return new IdentityProxyContainer(DockerResourceConfiguration);
     }
 
+    /// <summary>
+    /// Builds and returns an instance of <see cref="IdentityProxyContainer"/> using the specified <see
+    /// cref="HttpClient"/>.
+    /// </summary>
+    /// <param name="httpClient">The <see cref="HttpClient"/> instance to be used by the <see cref="IdentityProxyContainer"/>. Cannot be <see
+    /// langword="null"/>.</param>
+    /// <returns>A new instance of <see cref="IdentityProxyContainer"/> configured with the current settings and the specified
+    /// <see cref="HttpClient"/>.</returns>
+    public IdentityProxyContainer Build(HttpClient httpClient)
+    {
+        Validate();
+        return new IdentityProxyContainer(DockerResourceConfiguration, httpClient);
+    }
+
     /// <inheritdoc/>
     protected override IdentityProxyBuilder Clone(IContainerConfiguration resourceConfiguration)
     {

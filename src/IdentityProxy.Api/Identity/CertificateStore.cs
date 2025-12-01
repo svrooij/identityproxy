@@ -80,6 +80,6 @@ internal class CertificateStore : IDisposable
         var cert = request.CreateSelfSigned(notBefore, notAfter);
 
         // Export the certificate with the private key, then re-import it to generate an X509Certificate2 object
-        return new X509Certificate2(cert.Export(X509ContentType.Pfx), "", X509KeyStorageFlags.Exportable);
+        return X509CertificateLoader.LoadPkcs12(cert.Export(X509ContentType.Pfx), "", X509KeyStorageFlags.Exportable);
     }
 }

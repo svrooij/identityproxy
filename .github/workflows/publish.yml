@@ -93,7 +93,9 @@ jobs:
     - name: 👨‍🔧 Setup .NET Core SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.x
+        dotnet-version: |
+          10.x
+          8.x
 
     - name: 🔍 Enable problem matchers
       run: echo "::add-matcher::.github/matchers/dotnet.json"

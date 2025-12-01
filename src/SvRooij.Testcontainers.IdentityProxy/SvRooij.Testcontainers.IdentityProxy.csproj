@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 	<DefaultNamespace>Testcontainers.IdentityProxy</DefaultNamespace>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>$(MSBuildProjectName.Replace(" ", "_").Replace("SvRooij.","")</RootNamespace>

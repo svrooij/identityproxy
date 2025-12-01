@@ -21,7 +21,7 @@ public class IdentityProxyEndpointsTests
                 .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/");
             _container = builder.Build();
         }
-        await _container.StartAsync(TestContext.Current?.CancellationToken ?? CancellationToken.None);
+        await _container.StartAsync(TestContext.Current?.Execution.CancellationToken ?? CancellationToken.None);
     }
 
     [Test]
@@ -53,7 +53,7 @@ public class IdentityProxyEndpointsTests
             AdditionalClaims = new()
         };
         tokenRequest.AdditionalClaims.Add("some_claim", "with a value");
-        var token = await _container!.GetTokenAsync(tokenRequest, TestContext.Current?.CancellationToken ?? CancellationToken.None);
+        var token = await _container!.GetTokenAsync(tokenRequest, TestContext.Current?.Execution.CancellationToken ?? CancellationToken.None);
         await Assert.That(token).IsNotNull();
         await Assert.That(token.AccessToken).IsNotNull();
         await Assert.That(token.ExpiresIn).IsGreaterThan(0);
@@ -68,7 +68,7 @@ public class IdentityProxyEndpointsTests
     [Arguments("eyJhbGciOiJSUzI1NiIsImtpZCI6InhsVXBic3RoWmZHX04wUGRzYTRsbW10bU53bF91YlUxWXRtVHVjd1pOSkkiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiI2MmViMjQxMi1mNDEwLTRlMjMtOTVlNy02YTkxMTQ2YmMzMmMiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vZGY2OGFhMDMtNDhlYi00YjA5LTlmM2UtOGFlY2M1OGUyMDdjL3YyLjAiLCJleHAiOjE3NjA0NzU1ODAsImlhdCI6MTc2MDQ3MTk4MCwibmJmIjoxNzYwNDcxOTcwLCJzdWIiOiI5OWYwY2JhYS1iM2JiLTRhNzctODFhNS1lOGQxN2IyMjMyZWMifQ")]
     public async Task IdentityProxy_should_duplicate_token(string inputToken)
     {
-        var token = await _container!.DuplicateTokenAsync(inputToken, TestContext.Current?.CancellationToken ?? CancellationToken.None);
+        var token = await _container!.DuplicateTokenAsync(inputToken, TestContext.Current?.Execution.CancellationToken ?? CancellationToken.None);
         await Assert.That(token).IsNotNull();
         await Assert.That(token.AccessToken).IsNotNull();
     }
