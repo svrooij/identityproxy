@@ -23,7 +23,7 @@ public class IdentityProxyInitializationTests
     [Test]
     public async Task IdentityProxyContainer_Should_Initialize_Correctly()
     {
-        await _container!.StartAsync(TestContext.Current?.CancellationToken ?? CancellationToken.None);
+        await _container!.StartAsync(TestContext.Current?.Execution.CancellationToken ?? CancellationToken.None);
         var authority = _container.GetAuthority();
         await Assert.That(authority).IsNotNull();
     }

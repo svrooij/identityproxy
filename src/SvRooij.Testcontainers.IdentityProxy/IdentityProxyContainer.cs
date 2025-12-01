@@ -13,10 +13,10 @@ public class IdentityProxyContainer : DockerContainer
 {
     private readonly HttpClient _httpClient;
     private int? _port;
-    internal IdentityProxyContainer(IdentityProxyConfiguration configuration) : base(configuration)
+    internal IdentityProxyContainer(IdentityProxyConfiguration configuration, HttpClient? httpClient = null) : base(configuration)
     {
         // Create a http client to communicate with the auth proxy and get mocked tokens
-        _httpClient = new HttpClient();
+        _httpClient = httpClient ?? new HttpClient();
     }
 
     /// <summary>

@@ -10,4 +10,5 @@ public class IdentityProxyDescription
     public string OpenIdConfigUrl => $"{ExternalUrl}/.well-known/openid-configuration";
     public string JwksUrl => $"{ExternalUrl}/api/identity/jwks";
     public string TokenUrl => $"{ExternalUrl}/api/identity/token";
+    public string DocumentationUrl => $"{ExternalUrl}/scalar/";
 }

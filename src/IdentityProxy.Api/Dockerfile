@@ -30,7 +30,7 @@ RUN dotnet publish "./IdentityProxy.Api.csproj" -c $BUILD_CONFIGURATION -o /app/
 # Small image
 #FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-jammy-chiseled AS final
 # Small image with AOT (preview)
-FROM mcr.microsoft.com/dotnet/nightly/runtime-deps:8.0-jammy-chiseled-aot AS final
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled AS final
 
 WORKDIR /app
 EXPOSE 8080

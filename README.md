@@ -54,6 +54,8 @@ docker run -p 8080:8080 -e EXTERNAL_URL='http://localhost:8080/' -e IDENTITY_AUT
 
 The `EXTERNAL_URL` is the URL where the proxy is reachable from the outside. The `IDENTITY_AUTHORITY` is the base URL of the IdP to mock. The proxy will then listen on port 8080 and forward requests to the IdP.
 
+You can also check out the interactive documentation at `http://localhost:8080/scalar/` or the openapi spec at `http://localhost:8080/openapi/v1.json`
+
 ### Get a mocked token
 
 If you want a token you can request it from the `/api/identity/token` endpoint. The token will be signed with a certificate that is generated on startup. This certificate (the public key) is also injected in the JWKS response (so the server will accept the tokens as if they were real).
@@ -73,7 +75,7 @@ Content-Type: application/json
 ```
 
 The `sub` (Subject) claim is required, everything else is optional.
-Microsoft Entra also uses the `aud` (Audience) claim, so this is always set in the token.
+Microsoft Entra also uses the `aud` (Audience) claim.
 Any additional claims you provide will be added to the token.
 The `nbf` (Not Before) and `exp` (Expiration) claims are automatically added to the token, you can however control the lifetime of the token by providing the `expires_in` parameter, with the number of seconds you want to token to be valid.
 
@@ -171,6 +173,4 @@ sequenceDiagram
 
 I've tried my best to make the proxy as fast as possible, by enabling [Native AOT](https://learn.microsoft.com/aspnet/core/fundamentals/native-aot?view=aspnetcore-8.0&wt.mc_id=SEC-MVP-5004985) and packaging it in a [chiseled](https://devblogs.microsoft.com/dotnet/announcing-dotnet-chiseled-containers/) docker image.
 
-Having an OpenAPI spec would be nice, but is seems there is an issue with [Swashbuckle and AOT](https://github.com/domaindrivendev/Swashbuckle.AspNetCore/commit/61d890c8dcefe292c8c4582670d24c8f6bf90ce7).
-
-And the root url should return a fancy page with some info about the proxy, if someone would actually open it in their browser.
+As of version `v0.3.3` there is an interactive documentation page running at the `/scalar` endpoint, which uses the OpenAPI specifications available at `/openapi/v1.json`.
