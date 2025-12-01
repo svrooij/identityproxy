@@ -77,7 +77,7 @@ Content-Type: application/json
 The `sub` (Subject) claim is required, everything else is optional.
 Microsoft Entra also uses the `aud` (Audience) claim.
 Any additional claims you provide will be added to the token.
-The `nbf` (Not Before) and `exp` (Expiration) claims are automatically added to the token, you can however control the lifetime of the token by providing the `expires_in` parameter, with the number of seconds you want to token to be valid.
+The `nbf` (Not Before) and `exp` (Expiration) claims are automatically added to the token, you can however control the lifetime of the token by providing the `expires_in` parameter, with the number of seconds you want the token to be valid.
 
 And you'll get a response like this:
 

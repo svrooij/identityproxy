@@ -101,7 +101,7 @@ internal static class IdentityEndpoints
             .AddOpenApiOperationTransformer((operation, _, _) =>
             {
                 operation.Summary = "Clone token";
-                operation.Description = "Get a token signed with the extra signing certificate";
+                operation.Description = "Duplicate an existing JWT token and re-sign it with the extra signing certificate";
                 return Task.CompletedTask;
             })
             .Produces<TokenResponse>(200);
