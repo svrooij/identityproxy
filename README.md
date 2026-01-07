@@ -15,9 +15,8 @@ Check out [this example project](https://github.com/svrooij/demo-api-with-auth/t
 
 ```csharp
 using Testcontainers.IdentityProxy;
-
-var identityProxy = new IdentityProxyBuilder()
-    .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/")
+string authority = "https://login.microsoftonline.com/svrooij.io/v2.0/";
+var identityProxy = new IdentityProxyBuilder(authority)
     .Build();
 
 await identityProxy.StartAsync();
@@ -105,7 +104,7 @@ Content-Type: application/json
 }
 ```
 
-This will give you the same answer as above.
+This will give you the same response as above.
 
 
 ## How does it work?

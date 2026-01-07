@@ -28,9 +28,24 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
     /// <summary>
     /// Create a new instance of the <see cref="IdentityProxyBuilder"/>
     /// </summary>
+    [Obsolete("Use constructor with authority. This constructor will be removed in future versions.")]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public IdentityProxyBuilder() : this(new IdentityProxyConfiguration())
     {
         DockerResourceConfiguration = Init().DockerResourceConfiguration;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the IdentityProxyBuilder class using the specified authority endpoint.
+    /// </summary>
+    /// <param name="authority">The authority endpoint to use for authentication. Cannot be null or empty.</param>
+    /// <param name="image">The image to use, if you want a different version then the default</param>
+    public IdentityProxyBuilder(string authority, string image = IDENTITY_PROXY_IMAGE) : this(new IdentityProxyConfiguration())
+    {
+        ArgumentNullException.ThrowIfNullOrEmpty(authority);
+        ArgumentNullException.ThrowIfNullOrEmpty(image);
+        DockerResourceConfiguration = Init().DockerResourceConfiguration;
+        this.WithImage(image).WithAuthority(authority);
     }
 
     internal IdentityProxyBuilder(IdentityProxyConfiguration dockerResourceConfiguration) : base(dockerResourceConfiguration)

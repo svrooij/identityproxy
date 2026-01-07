@@ -89,10 +89,21 @@ internal static class IdentityEndpoints
         // The IdentityService is injected and the token to duplicate is bound from the request body
         identityApi.MapPost("/duplicate-token", async ([FromBody] DuplicateTokenRequest tokenRequest, [FromServices] IdentityService identityService, CancellationToken cancellationToken) =>
         {
+            if (string.IsNullOrWhiteSpace(tokenRequest.Token))
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    { "token", new[] { "The token to duplicate must be provided." } }
+                });
+                //return Results.BadRequest(new { error = "invalid_request", error_description = "The token to duplicate must be provided." });
+            }
             var newToken = await identityService.GetTokenAsync(tokenRequest.Token, cancellationToken);
             if (newToken is null)
             {
-                return Results.BadRequest(new { error = "invalid_token", error_description = "The provided token is invalid or could not be duplicated." });
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    { "token", new[] { "The provided token could not be duplicated." } }
+                });
             }
             return Results.Ok(newToken);
         })
@@ -104,6 +115,7 @@ internal static class IdentityEndpoints
                 operation.Description = "Duplicate an existing JWT token and re-sign it with the extra signing certificate";
                 return Task.CompletedTask;
             })
-            .Produces<TokenResponse>(200);
+            .Produces<TokenResponse>(200)
+            .ProducesValidationProblem();
     }
 }

@@ -70,7 +70,7 @@ internal class CertificateStore : IDisposable
         //request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign, false));
 
         // Set basic constraints
-        request.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+        request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
 
         // Set the validity period
         var notBefore = now.AddMinutes(VALID_FROM_MINUTES_ADJUSTMENT);
