@@ -1,0 +1,151 @@
+name: Auto-label PR and Update Description
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-label:
+    name: 🏷️ Auto-label PR based on commits
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: 🧑‍💻 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📝 Parse commits and update PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            
+            // Get all commits in the PR
+            const commits = await github.rest.pulls.listCommits({
+              owner,
+              repo,
+              pull_number: number,
+            });
+
+            // Parse commits
+            const commitTypes = new Set();
+            const commitMessages = [];
+            const breakingChanges = [];
+
+            commits.data.forEach(commit => {
+              const message = commit.commit.message;
+              const lines = message.split('\n');
+              const firstLine = lines[0];
+
+              // Extract conventional commit type
+              const typeMatch = firstLine.match(/^(feat|fix|docs|test|ci|deps|chore|refactor)(\(.+\))?!/);
+              const type = typeMatch ? typeMatch[1] : null;
+
+              if (type) {
+                commitTypes.add(type);
+              }
+
+              // Extract commit description (first line)
+              const descriptionMatch = firstLine.match(/^[^:]+:\s*(.+)$/);
+              if (descriptionMatch) {
+                commitMessages.push(`- ${descriptionMatch[1]} (${commit.sha.substring(0, 7)})`);
+              } else {
+                commitMessages.push(`- ${firstLine} (${commit.sha.substring(0, 7)})`);
+              }
+
+              // Check for BREAKING CHANGE
+              if (message.includes('BREAKING CHANGE:')) {
+                const breakingMatch = message.match(/BREAKING CHANGE:\s*(.+?)(?:\n|$)/);
+                if (breakingMatch) {
+                  breakingChanges.push(breakingMatch[1]);
+                }
+              }
+            });
+
+            // Map commit types to labels
+            const labelMap = {
+              'fix': 'bug',
+              'feat': 'enhancement',
+              'ci': 'ci',
+              'test': 'test',
+              'docs': 'docs',
+              'deps': 'dependency',
+            };
+
+            const labelsToAdd = [];
+            commitTypes.forEach(type => {
+              if (labelMap[type]) {
+                labelsToAdd.push(labelMap[type]);
+              }
+            });
+
+            // Add breaking-change label if found
+            if (breakingChanges.length > 0) {
+              labelsToAdd.push('breaking-change');
+            }
+
+            // Remove duplicates
+            const uniqueLabels = [...new Set(labelsToAdd)];
+
+            // Update labels
+            if (uniqueLabels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: number,
+                labels: uniqueLabels,
+              });
+              console.log(`Added labels: ${uniqueLabels.join(', ')}`);
+            }
+
+            // Build new description
+            let newDescription = `## Commits\n\n${commitMessages.join('\n')}`;
+
+            if (breakingChanges.length > 0) {
+              newDescription += `\n\n## ⚠️ Breaking Changes\n\n`;
+              breakingChanges.forEach(change => {
+                newDescription += `- ${change}\n`;
+              });
+            }
+
+            // Get current PR to preserve any existing description
+            const pr = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: number,
+            });
+
+            let currentBody = pr.data.body || '';
+            const startMarker = '<!-- auto-label-commits-start -->';
+            const endMarker = '<!-- auto-label-commits-end -->';
+            const autoLabelSection = `${startMarker}\n\n${newDescription}\n\n${endMarker}`;
+
+            // Check if the auto-label section already exists
+            const hasAutoLabelSection = currentBody.includes(startMarker) && currentBody.includes(endMarker);
+
+            let newBody;
+            if (hasAutoLabelSection) {
+              // Replace existing auto-label section
+              const regex = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`, 'g');
+              newBody = currentBody.replace(regex, autoLabelSection);
+              console.log('Replaced existing commits section');
+            } else {
+              // Append new auto-label section
+              newBody = `${currentBody}\n\n${autoLabelSection}`;
+              console.log('Added new commits section');
+            }
+
+            // Update PR description if it changed
+            if (newBody !== currentBody) {
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: number,
+                body: newBody,
+              });
+            }
+
+            console.log(`Processing complete. Types found: ${Array.from(commitTypes).join(', ')}`);
