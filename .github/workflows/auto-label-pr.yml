@@ -71,7 +71,7 @@ jobs:
               'feat': 'enhancement',
               'ci': 'ci',
               'test': 'test',
-              'docs': 'docs',
+              'docs': 'documentation',
               'deps': 'dependency',
             };
 
