@@ -95,7 +95,6 @@ internal static class IdentityEndpoints
                 {
                     { "token", new[] { "The token to duplicate must be provided." } }
                 });
-                //return Results.BadRequest(new { error = "invalid_request", error_description = "The token to duplicate must be provided." });
             }
             var newToken = await identityService.GetTokenAsync(tokenRequest.Token, cancellationToken);
             if (newToken is null)
