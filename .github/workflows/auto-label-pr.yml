@@ -101,6 +101,39 @@ jobs:
               console.log(`Added labels: ${uniqueLabels.join(', ')}`);
             }
 
+            // Generate smart PR title
+            const firstCommitMessage = commits.data[0]?.commit.message || '';
+            const firstDescriptionMatch = firstCommitMessage.match(/^[^:]+:\s*(.+)$/);
+            const primaryDescription = firstDescriptionMatch ? firstDescriptionMatch[1] : firstCommitMessage.split('\n')[0];
+
+            // Determine emoji based on PR severity
+            let titleEmoji = '🧑‍💻'; // default for mixed
+            
+            if (breakingChanges.length > 0) {
+              titleEmoji = '⚠️';
+            } else if (commitTypes.size === 1 && commitTypes.has('feat')) {
+              titleEmoji = '🚀';
+            } else if (commitTypes.size === 1) {
+              // Single type but not feat
+              titleEmoji = '🧑‍💻';
+            }
+
+            const newTitle = `${primaryDescription} ${titleEmoji}`;
+
+            // Get current PR title
+            const currentTitle = pr.data.title;
+
+            // Update title if it's different and not already manually set with emoji
+            if (newTitle !== currentTitle && !currentTitle.match(/^[⚠️🚀🧑‍💻]/)) {
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: number,
+                title: newTitle,
+              });
+              console.log(`Updated PR title to: ${newTitle}`);
+            }
+
             // Build new description
             let newDescription = `## Commits\n\n${commitMessages.join('\n')}`;
 
