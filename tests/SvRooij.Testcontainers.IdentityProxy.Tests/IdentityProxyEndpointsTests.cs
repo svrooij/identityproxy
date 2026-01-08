@@ -16,9 +16,9 @@ public class IdentityProxyEndpointsTests
         if (_container == null)
         {
             var builder = new IdentityProxyBuilder()
+                .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/")
                 .WithImage("svrooij/identityproxyapi:test") // Use the test image, make sure this is available locally
-                .WithImagePullPolicy((_) => false) // Don't pull the image, use the local one
-                .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/");
+                .WithImagePullPolicy((_) => false); // Don't pull the image, use the local one
             _container = builder.Build();
         }
         await _container.StartAsync(TestContext.Current?.Execution.CancellationToken ?? CancellationToken.None);
