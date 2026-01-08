@@ -101,6 +101,13 @@ jobs:
               console.log(`Added labels: ${uniqueLabels.join(', ')}`);
             }
 
+            // Get current PR to preserve any existing description and title
+            const pr = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: number,
+            });
+
             // Generate smart PR title
             const firstCommitMessage = commits.data[0]?.commit.message || '';
             const firstDescriptionMatch = firstCommitMessage.match(/^[^:]+:\s*(.+)$/);
@@ -143,13 +150,6 @@ jobs:
                 newDescription += `- ${change}\n`;
               });
             }
-
-            // Get current PR to preserve any existing description
-            const pr = await github.rest.pulls.get({
-              owner,
-              repo,
-              pull_number: number,
-            });
 
             let currentBody = pr.data.body || '';
             const startMarker = '<!-- auto-label-commits-start -->';
