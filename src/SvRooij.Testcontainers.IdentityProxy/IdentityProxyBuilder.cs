@@ -2,6 +2,7 @@
 using DotNet.Testcontainers;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
+using DotNet.Testcontainers.Images;
 using System.Text;
 
 namespace Testcontainers.IdentityProxy;
@@ -28,9 +29,34 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
     /// <summary>
     /// Create a new instance of the <see cref="IdentityProxyBuilder"/>
     /// </summary>
+    [Obsolete("This parameterless constructor is obsolete and will be removed. Use IdentityProxyBuilder(authority, image) instead: https://github.com/testcontainers/testcontainers-dotnet/discussions/1470#discussioncomment-15185721.")]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public IdentityProxyBuilder() : this(new IdentityProxyConfiguration())
     {
-        DockerResourceConfiguration = Init().DockerResourceConfiguration;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the IdentityProxyBuilder class using the specified authority and an optional
+    /// Docker image.
+    /// </summary>
+    /// <param name="authority">The authority URL of the IDP to proxy.</param>
+    /// <param name="image">The Docker image to use for the identity proxy container. If not specified, the version tagged with the current version is used.</param>
+    public IdentityProxyBuilder(string authority, string image = IDENTITY_PROXY_IMAGE) : this(authority, new DockerImage(image))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the IdentityProxyBuilder class using the specified authority and container image.
+    /// </summary>
+    /// <param name="authority">The authority URL to use for identity proxy configuration. This value is typically the address of the
+    /// authentication server.</param>
+    /// <param name="image">The container image to use for the identity proxy. Cannot be null.</param>
+    public IdentityProxyBuilder(string authority, IImage image) : this(new IdentityProxyConfiguration(authority: authority))
+    {
+        var builder = Init()
+            .WithImage(image)
+            .WithAuthority(authority);
+        DockerResourceConfiguration = builder.DockerResourceConfiguration;
     }
 
     internal IdentityProxyBuilder(IdentityProxyConfiguration dockerResourceConfiguration) : base(dockerResourceConfiguration)
@@ -72,6 +98,7 @@ public class IdentityProxyBuilder : ContainerBuilder<IdentityProxyBuilder, Ident
     /// <see cref="HttpClient"/>.</returns>
     public IdentityProxyContainer Build(HttpClient httpClient)
     {
+        ArgumentNullException.ThrowIfNull(httpClient);
         Validate();
         return new IdentityProxyContainer(DockerResourceConfiguration, httpClient);
     }

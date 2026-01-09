@@ -15,9 +15,8 @@ Check out [this example project](https://github.com/svrooij/demo-api-with-auth/t
 
 ```csharp
 using Testcontainers.IdentityProxy;
-string authority = "https://login.microsoftonline.com/svrooij.io/v2.0/";
-var identityProxy = new IdentityProxyBuilder()
-    .WithAuthority(authority) // The base URL of the IdP to mock
+string authority = "https://login.microsoftonline.com/svrooij.io/v2.0/"; // The base URL of the IdP to mock
+var identityProxy = new IdentityProxyBuilder(authority)
     .Build();
 
 await identityProxy.StartAsync();
