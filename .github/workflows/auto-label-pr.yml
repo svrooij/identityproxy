@@ -41,7 +41,7 @@ jobs:
               const firstLine = lines[0];
 
               // Extract conventional commit type
-              const typeMatch = firstLine.match(/^(feat|fix|docs|test|ci|deps|chore|refactor)(\(.+\))?!/);
+              const typeMatch = firstLine.match(/^(feat|fix|docs|test|ci|deps|chore|refactor)(\(.+\))?!?:/);
               const type = typeMatch ? typeMatch[1] : null;
 
               if (type) {
