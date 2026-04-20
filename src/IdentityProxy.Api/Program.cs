@@ -24,8 +24,9 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 var app = builder.Build();
+var externalUrl = app.Configuration.GetValue<string>("EXTERNAL_URL")?.TrimEnd('/');
 // Add the identity endpoints
-app.MapIdentityEndpoints(externalUrl: app.Configuration.GetValue<string>("EXTERNAL_URL")?.TrimEnd('/'));
+app.MapIdentityEndpoints(externalUrl: externalUrl);
 app.MapOpenApi();
 app.MapScalarApiReference(options =>
 {
@@ -36,5 +37,5 @@ app.MapScalarApiReference(options =>
 });
 
 app.Logger.LogInformation("IdentityProxy will proxy authority: {Authority}", authority);
-app.Logger.LogInformation("Documentation available at: {DocsUrl}", app.Configuration.GetValue<string>("EXTERNAL_URL")?.TrimEnd('/') + "/scalar");
+app.Logger.LogInformation("Documentation available at: {ExternalUrl}/scalar", externalUrl);
 await app.RunAsync();
