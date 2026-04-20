@@ -13,12 +13,12 @@ jobs:
       contents: read
     steps:
       - name: 🧑‍💻 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: 📝 Parse commits and update PR
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9.0.0
         with:
           script: |
             const { owner, repo, number } = context.issue;
@@ -41,7 +41,7 @@ jobs:
               const firstLine = lines[0];
 
               // Extract conventional commit type
-              const typeMatch = firstLine.match(/^(feat|fix|docs|test|ci|deps|chore|refactor)(\(.+\))?!/);
+              const typeMatch = firstLine.match(/^(feat|fix|docs|test|ci|deps|chore|refactor)(\(.+\))?!?:/);
               const type = typeMatch ? typeMatch[1] : null;
 
               if (type) {
