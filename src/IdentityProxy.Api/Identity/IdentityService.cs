@@ -71,22 +71,21 @@ internal partial class IdentityService
         using var rsa = certificate.PublicKey.GetRSAPublicKey();
         // Using an RSA Security Key here, instead of a X509SecurityKey, because the support for RSA keys is better on JWT libraries on other platforms.
         var rsaKey = JsonWebKeyConverter.ConvertFromRSASecurityKey(new RsaSecurityKey(rsa));
-        // Apparently the KeyId of an RSA key does not get set by default, bug? This is how the `InternalKeyId` is calculated.
-        var kid = Base64UrlEncoder.Encode(rsaKey.ComputeJwkThumbprint());
-        LogInjectingCertificate(kid);
+        // Use the SHA-1 thumbprint as kid, matching Microsoft's convention (kid == x5t)
+        var x5t = Base64UrlEncoder.Encode(certificate.GetCertHash());
+        LogInjectingCertificate(x5t);
 
         var jwk = new Jwk
         {
-            // Not sure if this is the correct way to get the kid
-            Kid = kid,
+            Kid = x5t,
             KeyType = rsaKey.Kty,
             // rsaKey.Use is not available, so we use "sig" instead
             Usage = "sig",
             NotBefore = new DateTimeOffset(certificate.NotBefore).ToUnixTimeSeconds(),
             Exponent = rsaKey.E,
             Modulus = rsaKey.N,
-            // SHA-1 thumbprint, Base64Url encoded
-            X509Thumbprint = Base64UrlEncoder.Encode(certificate.GetCertHash()),
+            // SHA-1 thumbprint, Base64Url encoded — same value as kid, matching Microsoft's convention
+            X509Thumbprint = x5t,
             // DER-encoded certificate, Base64 encoded (not URL-safe)
             X509CertificateChain = [Convert.ToBase64String(certificate.RawData)],
         };
@@ -115,8 +114,8 @@ internal partial class IdentityService
         // Using an RSA Security Key here, instead of a X509SecurityKey, because the support for RSA keys is better on JWT libraries on other platforms.
         // And because I have not seen a lot of examples with X509SecurityKey or the 'x5t' in the jwks.
         var securityKey = new RsaSecurityKey(rsa);
-        // WTF Microsoft, why is this empty?
-        securityKey.KeyId = Base64UrlEncoder.Encode(securityKey.ComputeJwkThumbprint());
+        // Use the SHA-1 thumbprint as kid, matching Microsoft's convention (kid == x5t)
+        securityKey.KeyId = Base64UrlEncoder.Encode(certificate.GetCertHash());
 
         Dictionary<string, object> claims = new()
         {
