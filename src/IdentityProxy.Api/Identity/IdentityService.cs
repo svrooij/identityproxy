@@ -85,6 +85,10 @@ internal partial class IdentityService
             NotBefore = new DateTimeOffset(certificate.NotBefore).ToUnixTimeSeconds(),
             Exponent = rsaKey.E,
             Modulus = rsaKey.N,
+            // SHA-1 thumbprint, Base64Url encoded
+            X509Thumbprint = Base64UrlEncoder.Encode(certificate.GetCertHash()),
+            // DER-encoded certificate, Base64 encoded (not URL-safe)
+            X509CertificateChain = [Convert.ToBase64String(certificate.RawData)],
         };
 
         // Create new Jwks object with the keys from the externalJwks.Keys and the jwk for the certificate
