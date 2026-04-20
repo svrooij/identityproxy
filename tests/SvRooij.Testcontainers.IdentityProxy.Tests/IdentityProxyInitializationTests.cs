@@ -1,20 +1,22 @@
 ﻿using TUnit.Core;
 using Testcontainers.IdentityProxy;
+using Microsoft.Extensions.Logging.Abstractions;
 namespace SvRooij.Testcontainers.IdentityProxy.Tests;
 
 public class IdentityProxyInitializationTests
 {
     private static IdentityProxyContainer? _container;
+    private static IdentityProxyContainer? _container2;
 
     [Before(Class)]
     public static void ContainerSetup()
     {
         if (_container == null)
         {
-            var builder = new IdentityProxyBuilder()
-                .WithImage("svrooij/identityproxyapi:test") // Use the test image, make sure this is available locally
+            var builder = new IdentityProxyBuilder("https://login.microsoftonline.com/svrooij.io/v2.0/", "svrooij/identityproxyapi:test") // Use the test image, make sure this is available locally
                 .WithImagePullPolicy((_) => false) // Don't pull the image, use the local one
-                .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/");
+                .WithLogger(NullLogger.Instance) // Remove container start/stop logging
+                ;
 
             _container = builder.Build();
         }

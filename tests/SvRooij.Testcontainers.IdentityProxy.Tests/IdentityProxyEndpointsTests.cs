@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging.Abstractions;
 using Testcontainers.IdentityProxy;
 
 namespace SvRooij.Testcontainers.IdentityProxy.Tests;
@@ -15,10 +11,9 @@ public class IdentityProxyEndpointsTests
     {
         if (_container == null)
         {
-            var builder = new IdentityProxyBuilder()
-                .WithAuthority("https://login.microsoftonline.com/svrooij.io/v2.0/")
-                .WithImage("svrooij/identityproxyapi:test") // Use the test image, make sure this is available locally
-                .WithImagePullPolicy((_) => false); // Don't pull the image, use the local one
+            var builder = new IdentityProxyBuilder("https://login.microsoftonline.com/svrooij.io/v2.0/", "svrooij/identityproxyapi:test") // Use the test image, make sure this is available locally
+                .WithImagePullPolicy((_) => false) // Don't pull the image, use the local one for testing
+                .WithLogger(NullLogger.Instance); // Don't log starting and stopping container messages
             _container = builder.Build();
         }
         await _container.StartAsync(TestContext.Current?.Execution.CancellationToken ?? CancellationToken.None);
