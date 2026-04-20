@@ -19,12 +19,14 @@ builder.Services.AddHttpClient<IdentityService>();
 // Json serialization in AOT project
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
+    options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, IdentityJsonSerializerContext.Default);
 });
 
 var app = builder.Build();
+var externalUrl = app.Configuration.GetValue<string>("EXTERNAL_URL")?.TrimEnd('/');
 // Add the identity endpoints
-app.MapIdentityEndpoints(externalUrl: app.Configuration.GetValue<string>("EXTERNAL_URL"));
+app.MapIdentityEndpoints(externalUrl: externalUrl);
 app.MapOpenApi();
 app.MapScalarApiReference(options =>
 {
@@ -35,4 +37,5 @@ app.MapScalarApiReference(options =>
 });
 
 app.Logger.LogInformation("IdentityProxy will proxy authority: {Authority}", authority);
+app.Logger.LogInformation("Documentation available at: {ExternalUrl}/scalar", externalUrl);
 await app.RunAsync();
