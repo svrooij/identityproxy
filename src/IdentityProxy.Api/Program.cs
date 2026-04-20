@@ -19,6 +19,7 @@ builder.Services.AddHttpClient<IdentityService>();
 // Json serialization in AOT project
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
+    options.SerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, IdentityJsonSerializerContext.Default);
 });
 
